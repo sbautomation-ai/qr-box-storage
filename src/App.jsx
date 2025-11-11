@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Search, MapPin, Tag, Plus, QrCode, Download, Printer, ExternalLink, Box, Zap, Trash2, Edit, Settings, X } from 'lucide-react'
+import { Search, MapPin, Tag, Plus, QrCode, Download, Printer, ExternalLink, Box, Zap, Trash2, Edit, Settings, X, Lock, LogOut } from 'lucide-react'
 import QRCodeLib from 'qrcode'
 import { supabase } from './supabaseClient'
 import { Button } from './components/ui/button'
@@ -10,7 +10,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from './components/u
 import { Label } from './components/ui/label'
 import { Textarea } from './components/ui/textarea'
 
+// ⚠️ CHANGE THIS PASSWORD TO WHATEVER YOU WANT ⚠️
+const APP_PASSWORD = 'scicbed2025'
+
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [passwordInput, setPasswordInput] = useState('')
+  const [passwordError, setPasswordError] = useState(false)
   const [boxes, setBoxes] = useState([])
   const [locations, setLocations] = useState([])
   const [categories, setCategories] = useState([])
@@ -36,10 +42,42 @@ function App() {
   const [newLocation, setNewLocation] = useState('')
   const [newCategory, setNewCategory] = useState('')
 
-  // Load all data from Supabase
+  // Check if already authenticated (stored in localStorage)
   useEffect(() => {
-    fetchAllData()
+    const storedAuth = localStorage.getItem('qr_box_auth')
+    if (storedAuth === 'true') {
+      setIsAuthenticated(true)
+    } else {
+      setLoading(false)
+    }
   }, [])
+
+  // Load data when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchAllData()
+    }
+  }, [isAuthenticated])
+
+  const handlePasswordSubmit = (e) => {
+    e.preventDefault()
+    if (passwordInput === APP_PASSWORD) {
+      setIsAuthenticated(true)
+      localStorage.setItem('qr_box_auth', 'true')
+      setPasswordError(false)
+    } else {
+      setPasswordError(true)
+      setPasswordInput('')
+    }
+  }
+
+  const handleLogout = () => {
+    if (window.confirm('Are you sure you want to lock the app?')) {
+      setIsAuthenticated(false)
+      localStorage.removeItem('qr_box_auth')
+      setPasswordInput('')
+    }
+  }
 
   const fetchAllData = async () => {
     try {
@@ -100,17 +138,18 @@ function App() {
   }
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-    const boxId = urlParams.get('box')
-    if (boxId && boxes.length > 0) {
-      const box = boxes.find(b => b.id === parseInt(boxId))
-      if (box) {
-        handleViewBox(box)
+    if (isAuthenticated && boxes.length > 0) {
+      const urlParams = new URLSearchParams(window.location.search)
+      const boxId = urlParams.get('box')
+      if (boxId) {
+        const box = boxes.find(b => b.id === parseInt(boxId))
+        if (box) {
+          handleViewBox(box)
+        }
       }
     }
-  }, [boxes])
+  }, [boxes, isAuthenticated])
 
-  // Enhanced global search - searches across all fields
   const filteredBoxes = boxes.filter(box => {
     const searchLower = searchTerm.toLowerCase()
     const matchesSearch = !searchTerm || 
@@ -197,7 +236,6 @@ function App() {
     }
   }
 
-  // Admin functions
   const handleAddLocation = async (e) => {
     e.preventDefault()
     if (!newLocation.trim()) return
@@ -363,6 +401,48 @@ function App() {
     setCurrentBox(null)
   }
 
+  // Password Screen
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4">
+        <Card className="w-full max-w-md border-border">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="p-4 bg-primary/10 rounded-full">
+                <Lock className="w-12 h-12" />
+              </div>
+            </div>
+            <CardTitle className="text-3xl">QR Box Storage</CardTitle>
+            <CardDescription>Enter password to access</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              <div>
+                <Input
+                  type="password"
+                  placeholder="Enter password"
+                  value={passwordInput}
+                  onChange={(e) => {
+                    setPasswordInput(e.target.value)
+                    setPasswordError(false)
+                  }}
+                  className={passwordError ? 'border-red-500' : ''}
+                  autoFocus
+                />
+                {passwordError && (
+                  <p className="text-red-500 text-sm mt-2">Incorrect password. Try again.</p>
+                )}
+              </div>
+              <Button type="submit" className="w-full">
+                Unlock
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
@@ -379,15 +459,24 @@ function App() {
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
         <header className="text-center py-12 border-b border-border mb-12 relative">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setAdminModalOpen(true)}
-            className="absolute top-4 right-4"
-            title="Admin Settings"
-          >
-            <Settings className="w-5 h-5" />
-          </Button>
+          <div className="absolute top-4 right-4 flex gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setAdminModalOpen(true)}
+              title="Admin Settings"
+            >
+              <Settings className="w-5 h-5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleLogout}
+              title="Lock App"
+            >
+              <LogOut className="w-5 h-5" />
+            </Button>
+          </div>
           <h1 className="text-5xl font-bold mb-3 flex items-center justify-center gap-3">
             <Box className="w-12 h-12" />
             QR Box Storage
