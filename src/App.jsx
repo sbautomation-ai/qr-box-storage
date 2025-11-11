@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Search, MapPin, Tag, Plus, QrCode, Download, Printer, ExternalLink, Box, Zap, Trash2, Edit, Settings, X, Lock, LogOut } from 'lucide-react'
+import { Search, MapPin, Tag, Plus, QrCode, Download, Printer, ExternalLink, Box, Zap, Trash2, Edit, Settings, X, Lock, LogOut, Package, Check } from 'lucide-react'
 import QRCodeLib from 'qrcode'
 import { supabase } from './supabaseClient'
 import { Button } from './components/ui/button'
@@ -31,6 +31,9 @@ function App() {
   const [editMode, setEditMode] = useState(false)
   const [currentBox, setCurrentBox] = useState(null)
   const [qrDataUrl, setQrDataUrl] = useState('')
+  const [items, setItems] = useState([])
+  const [newItemName, setNewItemName] = useState('')
+  const [newItemQuantity, setNewItemQuantity] = useState(1)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -137,6 +140,22 @@ function App() {
     }
   }
 
+  const fetchItems = async (boxId) => {
+    try {
+      const { data, error } = await supabase
+        .from('items')
+        .select('*')
+        .eq('box_id', boxId)
+        .order('created_at', { ascending: true })
+      
+      if (error) throw error
+      setItems(data || [])
+    } catch (error) {
+      console.error('Error fetching items:', error)
+      alert('Error loading items. Check console for details.')
+    }
+  }
+
   useEffect(() => {
     if (isAuthenticated && boxes.length > 0) {
       const urlParams = new URLSearchParams(window.location.search)
@@ -181,7 +200,7 @@ function App() {
     }
   }
 
-  const handleViewBox = (box) => {
+  const handleViewBox = async (box) => {
     setCurrentBox(box)
     setFormData({
       name: box.name,
@@ -191,6 +210,7 @@ function App() {
     })
     setEditMode(false)
     setViewModalOpen(true)
+    await fetchItems(box.id)
   }
 
   const handleEditBox = async (e) => {
@@ -217,7 +237,7 @@ function App() {
   }
 
   const handleDeleteBox = async () => {
-    if (window.confirm(`Are you sure you want to delete "${currentBox.name}"?`)) {
+    if (window.confirm(`Are you sure you want to delete "${currentBox.name}"? This will also delete all items inside.`)) {
       try {
         const { error } = await supabase
           .from('boxes')
@@ -233,6 +253,68 @@ function App() {
         console.error('Error deleting box:', error)
         alert('Error deleting box. Check console for details.')
       }
+    }
+  }
+
+  // Item management functions
+  const handleAddItem = async (e) => {
+    e.preventDefault()
+    if (!newItemName.trim()) return
+    
+    try {
+      const { data, error } = await supabase
+        .from('items')
+        .insert([{
+          box_id: currentBox.id,
+          name: newItemName.trim(),
+          quantity: newItemQuantity
+        }])
+        .select()
+      
+      if (error) throw error
+      
+      setItems([...items, data[0]])
+      setNewItemName('')
+      setNewItemQuantity(1)
+    } catch (error) {
+      console.error('Error adding item:', error)
+      alert('Error adding item. Check console for details.')
+    }
+  }
+
+  const handleToggleItem = async (item) => {
+    try {
+      const { error } = await supabase
+        .from('items')
+        .update({ checked: !item.checked })
+        .eq('id', item.id)
+      
+      if (error) throw error
+      
+      setItems(items.map(i => 
+        i.id === item.id 
+          ? { ...i, checked: !i.checked }
+          : i
+      ))
+    } catch (error) {
+      console.error('Error toggling item:', error)
+      alert('Error updating item. Check console for details.')
+    }
+  }
+
+  const handleDeleteItem = async (itemId) => {
+    try {
+      const { error } = await supabase
+        .from('items')
+        .delete()
+        .eq('id', itemId)
+      
+      if (error) throw error
+      
+      setItems(items.filter(i => i.id !== itemId))
+    } catch (error) {
+      console.error('Error deleting item:', error)
+      alert('Error deleting item. Check console for details.')
     }
   }
 
@@ -384,7 +466,7 @@ function App() {
     printWindow.print()
   }
 
-  const handleOpenBoxFromQR = () => {
+  const handleOpenBoxFromQR = async () => {
     setQrModalOpen(false)
     setViewModalOpen(true)
     setFormData({
@@ -393,12 +475,16 @@ function App() {
       category: currentBox.category,
       description: currentBox.description || ''
     })
+    await fetchItems(currentBox.id)
   }
 
   const closeViewModal = () => {
     setViewModalOpen(false)
     setEditMode(false)
     setCurrentBox(null)
+    setItems([])
+    setNewItemName('')
+    setNewItemQuantity(1)
   }
 
   // Password Screen
@@ -758,7 +844,7 @@ function App() {
 
         {/* View/Edit Box Modal */}
         <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>
-          <DialogContent onClose={closeViewModal}>
+          <DialogContent onClose={closeViewModal} className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editMode ? 'Edit Box' : currentBox?.name}</DialogTitle>
             </DialogHeader>
@@ -823,26 +909,104 @@ function App() {
                 </div>
               </form>
             ) : (
-              <div className="space-y-4">
-                <div>
-                  <Label>Location</Label>
-                  <p className="mt-1 text-muted-foreground flex items-center gap-2">
-                    <MapPin className="w-4 h-4" />
-                    {currentBox?.location}
-                  </p>
+              <div className="space-y-6">
+                {/* Box Info */}
+                <div className="space-y-4">
+                  <div>
+                    <Label>Location</Label>
+                    <p className="mt-1 text-muted-foreground flex items-center gap-2">
+                      <MapPin className="w-4 h-4" />
+                      {currentBox?.location}
+                    </p>
+                  </div>
+                  <div>
+                    <Label>Category</Label>
+                    <p className="mt-1 text-muted-foreground flex items-center gap-2">
+                      <Tag className="w-4 h-4" />
+                      {currentBox?.category}
+                    </p>
+                  </div>
+                  <div>
+                    <Label>Description</Label>
+                    <p className="mt-1 text-muted-foreground">{currentBox?.description || 'No description'}</p>
+                  </div>
                 </div>
-                <div>
-                  <Label>Category</Label>
-                  <p className="mt-1 text-muted-foreground flex items-center gap-2">
-                    <Tag className="w-4 h-4" />
-                    {currentBox?.category}
-                  </p>
+
+                {/* Items List */}
+                <div className="border-t border-border pt-6">
+                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <Package className="w-5 h-5" />
+                    Items in this box ({items.length})
+                  </h3>
+                  
+                  {/* Add Item Form */}
+                  <form onSubmit={handleAddItem} className="flex gap-2 mb-4">
+                    <Input
+                      placeholder="Item name..."
+                      value={newItemName}
+                      onChange={(e) => setNewItemName(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Input
+                      type="number"
+                      min="1"
+                      value={newItemQuantity}
+                      onChange={(e) => setNewItemQuantity(parseInt(e.target.value) || 1)}
+                      className="w-20"
+                      placeholder="Qty"
+                    />
+                    <Button type="submit">
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </form>
+
+                  {/* Items List */}
+                  <div className="space-y-2 max-h-64 overflow-y-auto border border-border rounded-lg p-3">
+                    {items.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">No items yet. Add your first item above!</p>
+                    ) : (
+                      items.map(item => (
+                        <div 
+                          key={item.id} 
+                          className={`flex items-center justify-between p-2 hover:bg-secondary rounded ${item.checked ? 'opacity-50' : ''}`}
+                        >
+                          <div className="flex items-center gap-3 flex-1">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleItem(item)}
+                              className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                                item.checked 
+                                  ? 'bg-primary border-primary' 
+                                  : 'border-muted-foreground hover:border-primary'
+                              }`}
+                            >
+                              {item.checked && <Check className="w-3 h-3 text-primary-foreground" />}
+                            </button>
+                            <span className={item.checked ? 'line-through' : ''}>
+                              {item.name}
+                            </span>
+                            {item.quantity > 1 && (
+                              <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded">
+                                ×{item.quantity}
+                              </span>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteItem(item.id)}
+                            className="hover:bg-red-500 hover:text-white"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <Label>Description</Label>
-                  <p className="mt-1 text-muted-foreground">{currentBox?.description || 'No description'}</p>
-                </div>
-                <div className="flex gap-2 pt-4">
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-4 border-t border-border">
                   <Button onClick={() => setEditMode(true)} variant="outline" className="flex-1">
                     <Edit className="w-4 h-4 mr-2" />
                     Edit
