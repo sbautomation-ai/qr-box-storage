@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Search, MapPin, Tag, Plus, QrCode, Download, Printer, ExternalLink, Box, Zap, Trash2, Edit, Settings, X, Lock, LogOut, Package, Check } from 'lucide-react'
+import { Search, MapPin, Tag, Plus, QrCode, Download, Printer, ExternalLink, Box, Zap, Trash2, Edit, Settings, X, Lock, LogOut, Package, Check, Image as ImageIcon, Upload } from 'lucide-react'
 import QRCodeLib from 'qrcode'
 import { supabase } from './supabaseClient'
 import { Button } from './components/ui/button'
@@ -11,7 +11,7 @@ import { Label } from './components/ui/label'
 import { Textarea } from './components/ui/textarea'
 
 // ⚠️ CHANGE THIS PASSWORD TO WHATEVER YOU WANT ⚠️
-const APP_PASSWORD = 'scicbed2025'
+const APP_PASSWORD = 'family2024'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -34,6 +34,9 @@ function App() {
   const [items, setItems] = useState([])
   const [newItemName, setNewItemName] = useState('')
   const [newItemQuantity, setNewItemQuantity] = useState(1)
+  const [photos, setPhotos] = useState([])
+  const [uploading, setUploading] = useState(false)
+  const [selectedPhoto, setSelectedPhoto] = useState(null)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -156,6 +159,22 @@ function App() {
     }
   }
 
+  const fetchPhotos = async (boxId) => {
+    try {
+      const { data, error } = await supabase
+        .from('photos')
+        .select('*')
+        .eq('box_id', boxId)
+        .order('created_at', { ascending: true })
+      
+      if (error) throw error
+      setPhotos(data || [])
+    } catch (error) {
+      console.error('Error fetching photos:', error)
+      alert('Error loading photos. Check console for details.')
+    }
+  }
+
   useEffect(() => {
     if (isAuthenticated && boxes.length > 0) {
       const urlParams = new URLSearchParams(window.location.search)
@@ -211,6 +230,7 @@ function App() {
     setEditMode(false)
     setViewModalOpen(true)
     await fetchItems(box.id)
+    await fetchPhotos(box.id)
   }
 
   const handleEditBox = async (e) => {
@@ -237,8 +257,14 @@ function App() {
   }
 
   const handleDeleteBox = async () => {
-    if (window.confirm(`Are you sure you want to delete "${currentBox.name}"? This will also delete all items inside.`)) {
+    if (window.confirm(`Are you sure you want to delete "${currentBox.name}"? This will also delete all items and photos inside.`)) {
       try {
+        // Delete all photos from storage first
+        for (const photo of photos) {
+          const fileName = photo.url.split('/').pop()
+          await supabase.storage.from('box-photos').remove([fileName])
+        }
+
         const { error } = await supabase
           .from('boxes')
           .delete()
@@ -315,6 +341,92 @@ function App() {
     } catch (error) {
       console.error('Error deleting item:', error)
       alert('Error deleting item. Check console for details.')
+    }
+  }
+
+  // Photo management functions
+  const handlePhotoUpload = async (e) => {
+    const files = Array.from(e.target.files)
+    if (files.length === 0) return
+
+    setUploading(true)
+
+    try {
+      for (const file of files) {
+        // Check file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          alert(`${file.name} is too large. Max size is 5MB.`)
+          continue
+        }
+
+        // Check file type
+        if (!file.type.startsWith('image/')) {
+          alert(`${file.name} is not an image.`)
+          continue
+        }
+
+        // Create unique filename
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${currentBox.id}_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
+
+        // Upload to Supabase Storage
+        const { error: uploadError } = await supabase.storage
+          .from('box-photos')
+          .upload(fileName, file)
+
+        if (uploadError) throw uploadError
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('box-photos')
+          .getPublicUrl(fileName)
+
+        // Save to database
+        const { data, error: dbError } = await supabase
+          .from('photos')
+          .insert([{
+            box_id: currentBox.id,
+            url: publicUrl
+          }])
+          .select()
+
+        if (dbError) throw dbError
+
+        setPhotos([...photos, data[0]])
+      }
+    } catch (error) {
+      console.error('Error uploading photo:', error)
+      alert('Error uploading photo. Check console for details.')
+    } finally {
+      setUploading(false)
+      e.target.value = '' // Reset file input
+    }
+  }
+
+  const handleDeletePhoto = async (photo) => {
+    if (!window.confirm('Delete this photo?')) return
+
+    try {
+      // Delete from storage
+      const fileName = photo.url.split('/').pop()
+      const { error: storageError } = await supabase.storage
+        .from('box-photos')
+        .remove([fileName])
+
+      if (storageError) throw storageError
+
+      // Delete from database
+      const { error: dbError } = await supabase
+        .from('photos')
+        .delete()
+        .eq('id', photo.id)
+
+      if (dbError) throw dbError
+
+      setPhotos(photos.filter(p => p.id !== photo.id))
+    } catch (error) {
+      console.error('Error deleting photo:', error)
+      alert('Error deleting photo. Check console for details.')
     }
   }
 
@@ -476,6 +588,7 @@ function App() {
       description: currentBox.description || ''
     })
     await fetchItems(currentBox.id)
+    await fetchPhotos(currentBox.id)
   }
 
   const closeViewModal = () => {
@@ -483,6 +596,7 @@ function App() {
     setEditMode(false)
     setCurrentBox(null)
     setItems([])
+    setPhotos([])
     setNewItemName('')
     setNewItemQuantity(1)
   }
@@ -844,7 +958,7 @@ function App() {
 
         {/* View/Edit Box Modal */}
         <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>
-          <DialogContent onClose={closeViewModal} className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogContent onClose={closeViewModal} className="max-w-3xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editMode ? 'Edit Box' : currentBox?.name}</DialogTitle>
             </DialogHeader>
@@ -930,6 +1044,63 @@ function App() {
                     <Label>Description</Label>
                     <p className="mt-1 text-muted-foreground">{currentBox?.description || 'No description'}</p>
                   </div>
+                </div>
+
+                {/* Photos Section */}
+                <div className="border-t border-border pt-6">
+                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <ImageIcon className="w-5 h-5" />
+                    Photos ({photos.length})
+                  </h3>
+                  
+                  {/* Upload Button */}
+                  <div className="mb-4">
+                    <label htmlFor="photo-upload" className="cursor-pointer">
+                      <div className="border-2 border-dashed border-border rounded-lg p-6 hover:border-primary transition-colors text-center">
+                        <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">
+                          {uploading ? 'Uploading...' : 'Click to upload photos (max 5MB each)'}
+                        </p>
+                      </div>
+                    </label>
+                    <input
+                      id="photo-upload"
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                      disabled={uploading}
+                    />
+                  </div>
+
+                  {/* Photos Grid */}
+                  {photos.length > 0 ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {photos.map(photo => (
+                        <div key={photo.id} className="relative group">
+                          <img
+                            src={photo.url}
+                            alt="Box content"
+                            className="w-full h-32 object-cover rounded-lg border border-border cursor-pointer hover:opacity-75 transition-opacity"
+                            onClick={() => setSelectedPhoto(photo.url)}
+                          />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeletePhoto(photo)}
+                            className="absolute top-1 right-1 bg-black/50 hover:bg-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="w-4 h-4 text-white" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4 border border-border rounded-lg">
+                      No photos yet. Upload some to remember what's inside!
+                    </p>
+                  )}
                 </div>
 
                 {/* Items List */}
@@ -1021,6 +1192,22 @@ function App() {
                   </Button>
                 </div>
               </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Photo Viewer Modal */}
+        <Dialog open={!!selectedPhoto} onOpenChange={() => setSelectedPhoto(null)}>
+          <DialogContent onClose={() => setSelectedPhoto(null)} className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>Photo</DialogTitle>
+            </DialogHeader>
+            {selectedPhoto && (
+              <img
+                src={selectedPhoto}
+                alt="Full size"
+                className="w-full h-auto rounded-lg"
+              />
             )}
           </DialogContent>
         </Dialog>
