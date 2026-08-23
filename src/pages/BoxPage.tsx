@@ -67,7 +67,7 @@ export function BoxPage() {
     const popup = window.open('', '_blank')
     if (!popup) return showToast('Allow pop-ups to print a label', 'error')
     popup.opener = null
-    popup.document.write(`<!doctype html><html><head><title>${escapeHtml(box.data!.name)}</title><style>@page{size:100mm 62mm;margin:5mm}body{font-family:system-ui;text-align:center;margin:0;color:#000}h1{font-size:20px;margin:0 0 4px}p{font-size:12px;margin:2px}img{width:38mm;height:38mm}</style></head><body><h1>${escapeHtml(box.data!.name)}</h1><p>${escapeHtml(box.data!.location?.name ?? '')} · ${escapeHtml(box.data!.category?.name ?? '')}</p><img src="${qrUrl}" alt="QR code"><script>onload=()=>print()</script></body></html>`)
+    popup.document.write(`<!doctype html><html><head><title>${escapeHtml(box.data!.name)}</title><style>@page{size:100mm 62mm;margin:5mm}body{font-family:system-ui;text-align:center;margin:0;color:#000}h1{font-size:20px;margin:0 0 4px}p{font-size:12px;margin:2px}img{width:38mm;height:38mm}</style></head><body><h1>${escapeHtml(box.data!.name)}</h1><p>${escapeHtml(box.data!.category?.name ?? '')}</p><img src="${qrUrl}" alt="QR code"><script>onload=()=>print()</script></body></html>`)
     popup.document.close()
   }
 

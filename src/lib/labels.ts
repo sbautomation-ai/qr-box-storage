@@ -2,7 +2,6 @@ import { escapeHtml } from './utils'
 
 export type PrintableBoxLabel = {
   name: string
-  location: string
   category: string
   qrDataUrl: string
 }
@@ -13,7 +12,6 @@ export function buildBatchLabelPrintHtml(labels: PrintableBoxLabel[]) {
       <img src="${escapeHtml(label.qrDataUrl)}" alt="">
       <div class="details">
         <h1>${escapeHtml(label.name)}</h1>
-        <p>${escapeHtml(label.location)}</p>
         <p>${escapeHtml(label.category)}</p>
       </div>
     </article>`).join('')

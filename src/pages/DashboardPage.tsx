@@ -74,7 +74,6 @@ function BatchPrintDialog({ open, onOpenChange, boxes }: { open: boolean; onOpen
     try {
       const labels = await Promise.all(selectedBoxes.map(async (box) => ({
         name: box.name,
-        location: box.location?.name ?? '',
         category: box.category?.name ?? '',
         qrDataUrl: await QRCode.toDataURL(`${appUrl()}/boxes/${box.id}`, { width: 512, margin: 3, color: { dark: '#09090b', light: '#ffffff' } }),
       })))
