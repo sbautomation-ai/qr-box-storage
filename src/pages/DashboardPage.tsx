@@ -1,7 +1,8 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Box, MapPin, Plus, Search, Tag, X } from 'lucide-react'
+import { Box, MapPin, Plus, Printer, Search, Tag, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import QRCode from 'qrcode'
 import { EmptyState, ErrorPanel, LoadingScreen } from '@/components/Feedback'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -11,10 +12,12 @@ import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { queryKeys, useBoxes, useCategories, useLocations } from '@/hooks/useData'
-import { errorMessage, supabase } from '@/lib/supabase'
+import { appUrl, errorMessage, supabase } from '@/lib/supabase'
 import { filterBoxes } from '@/lib/filters'
+import { buildBatchLabelPrintHtml } from '@/lib/labels'
 import { useAuth } from '@/providers/AuthProvider'
 import { useToast } from '@/providers/ToastProvider'
+import type { BoxRecord } from '@/types'
 
 export function DashboardPage() {
   const { membership } = useAuth()
@@ -26,6 +29,7 @@ export function DashboardPage() {
   const [locationId, setLocationId] = useState('')
   const [categoryId, setCategoryId] = useState('')
   const [createOpen, setCreateOpen] = useState(false)
+  const [printOpen, setPrintOpen] = useState(false)
   const filtered = useMemo(() => filterBoxes(boxes.data ?? [], search, locationId, categoryId), [boxes.data, categoryId, locationId, search])
 
   if (boxes.isLoading || locations.isLoading || categories.isLoading) return <LoadingScreen />
@@ -34,7 +38,7 @@ export function DashboardPage() {
   return <>
     <section className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
       <div><p className="text-sm font-medium text-zinc-500">{membership?.household?.name}</p><h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">Your storage boxes</h1><p className="mt-2 text-zinc-400">Search every box and item, or scan a label to jump straight in.</p></div>
-      <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4" />New box</Button>
+      <div className="flex flex-wrap gap-2">{Boolean(boxes.data?.length) && <Button variant="outline" onClick={() => setPrintOpen(true)}><Printer className="h-4 w-4" />Print labels</Button>}<Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4" />New box</Button></div>
     </section>
     <section className="mb-6 grid gap-3 md:grid-cols-[minmax(0,1fr)_220px_220px]" aria-label="Box filters">
       <div className="relative"><Search className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-zinc-500" /><Input aria-label="Search boxes and items" placeholder="Search boxes and items…" value={search} onChange={(event) => setSearch(event.target.value)} className="pl-10" /></div>
@@ -43,7 +47,50 @@ export function DashboardPage() {
     </section>
     {filtered.length ? <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{filtered.map((boxRecord) => <Link key={boxRecord.id} to={`/boxes/${boxRecord.id}`} className="group rounded-2xl focus:outline-none focus:ring-2 focus:ring-white"><Card className="h-full transition group-hover:-translate-y-0.5 group-hover:border-zinc-600"><CardHeader><div className="flex items-start justify-between gap-3"><h2 className="text-xl font-bold">{boxRecord.name}</h2><Box className="h-5 w-5 shrink-0 text-zinc-600" /></div></CardHeader><CardContent><div className="space-y-2 text-sm text-zinc-400"><p className="flex items-center gap-2"><MapPin className="h-4 w-4" />{boxRecord.location?.name}</p><p className="flex items-center gap-2"><Tag className="h-4 w-4" />{boxRecord.category?.name}</p></div>{boxRecord.description && <p className="mt-4 line-clamp-3 text-sm text-zinc-300">{boxRecord.description}</p>}<p className="mt-5 text-xs text-zinc-500">{boxRecord.box_inventory?.length ?? 0} item types</p></CardContent></Card></Link>)}</div> : <EmptyState title={search || locationId || categoryId ? 'No matching boxes' : 'Create your first box'} message={search || locationId || categoryId ? 'Try another search or clear a filter.' : 'Create a box and add any missing location or category along the way.'} action={!search && !locationId && !categoryId ? <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4" />New box</Button> : undefined} />}
     <BoxFormDialog open={createOpen} onOpenChange={setCreateOpen} householdId={householdId} locations={locations.data ?? []} categories={categories.data ?? []} />
+    <BatchPrintDialog open={printOpen} onOpenChange={setPrintOpen} boxes={boxes.data ?? []} />
   </>
+}
+
+function BatchPrintDialog({ open, onOpenChange, boxes }: { open: boolean; onOpenChange: (open: boolean) => void; boxes: BoxRecord[] }) {
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [printing, setPrinting] = useState(false)
+  const wasOpen = useRef(false)
+  const { showToast } = useToast()
+
+  useEffect(() => {
+    if (open && !wasOpen.current) setSelectedIds(boxes.map((box) => box.id))
+    wasOpen.current = open
+  }, [boxes, open])
+
+  async function printLabels() {
+    const selectedBoxes = boxes.filter((box) => selectedIds.includes(box.id))
+    if (!selectedBoxes.length) return
+    const popup = window.open('', '_blank')
+    if (!popup) return showToast('Allow pop-ups to print labels', 'error')
+    popup.opener = null
+    popup.document.write('<!doctype html><title>Preparing labels…</title><p style="font-family:system-ui;padding:2rem">Preparing QR labels…</p>')
+    popup.document.close()
+    setPrinting(true)
+    try {
+      const labels = await Promise.all(selectedBoxes.map(async (box) => ({
+        name: box.name,
+        location: box.location?.name ?? '',
+        category: box.category?.name ?? '',
+        qrDataUrl: await QRCode.toDataURL(`${appUrl()}/boxes/${box.id}`, { width: 512, margin: 3, color: { dark: '#09090b', light: '#ffffff' } }),
+      })))
+      popup.document.open()
+      popup.document.write(buildBatchLabelPrintHtml(labels))
+      popup.document.close()
+      onOpenChange(false)
+    } catch (error) {
+      popup.close()
+      showToast(errorMessage(error), 'error')
+    } finally {
+      setPrinting(false)
+    }
+  }
+
+  return <Dialog open={open} onOpenChange={onOpenChange} title="Print QR labels" description="Choose boxes to arrange as compact labels on A4 paper." className="max-w-2xl"><div className="mb-3 flex items-center justify-between gap-3"><p className="text-sm text-zinc-400">{selectedIds.length} of {boxes.length} selected</p><div className="flex gap-2"><Button size="sm" variant="ghost" onClick={() => setSelectedIds(boxes.map((box) => box.id))}>Select all</Button><Button size="sm" variant="ghost" onClick={() => setSelectedIds([])}>Clear</Button></div></div><fieldset className="max-h-[50dvh] space-y-2 overflow-y-auto pr-1"><legend className="sr-only">Boxes to print</legend>{boxes.map((box) => { const checked = selectedIds.includes(box.id); return <label key={box.id} className="flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 hover:border-zinc-600"><input type="checkbox" checked={checked} onChange={() => setSelectedIds((current) => checked ? current.filter((id) => id !== box.id) : [...current, box.id])} className="h-5 w-5 accent-white" /><span className="min-w-0"><span className="block truncate text-sm font-medium">{box.name}</span><span className="block truncate text-xs text-zinc-500">{box.location?.name} · {box.category?.name}</span></span></label> })}</fieldset><Button className="mt-5 w-full" disabled={!selectedIds.length || printing} onClick={() => void printLabels()}><Printer className="h-4 w-4" />{printing ? 'Preparing labels…' : `Print ${selectedIds.length} label${selectedIds.length === 1 ? '' : 's'}`}</Button></Dialog>
 }
 
 function BoxFormDialog({ open, onOpenChange, householdId, locations, categories }: { open: boolean; onOpenChange: (open: boolean) => void; householdId: string; locations: Array<{ id: string; name: string }>; categories: Array<{ id: string; name: string }> }) {
