@@ -5,22 +5,37 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b --pretty false",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "check": "npm run typecheck && npm run lint && npm run test && npm run build",
+    "preview": "vite preview",
+    "supabase:start": "supabase start",
+    "supabase:reset": "supabase db reset"
   },
   "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.23",
     "@supabase/supabase-js": "^2.81.0",
+    "@tanstack/react-query": "^5.102.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.553.0",
     "qrcode": "^1.5.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-router-dom": "^7.18.2",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@playwright/test": "^1.62.1",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.6",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-react": "^5.1.0",
@@ -29,9 +44,14 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "jsdom": "^29.1.1",
     "postcss": "^8.5.6",
+    "supabase": "^2.115.0",
     "tailwindcss": "^3.4.18",
-    "vite": "npm:rolldown-vite@7.2.2"
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.67.0",
+    "vite": "npm:rolldown-vite@7.2.2",
+    "vitest": "^4.1.11"
   },
   "overrides": {
     "vite": "npm:rolldown-vite@7.2.2"
