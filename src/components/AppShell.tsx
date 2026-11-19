@@ -1,23 +1,46 @@
-import { Box, LogOut, Settings } from 'lucide-react'
-import { Link, NavLink, Outlet } from 'react-router-dom'
+import { Boxes, LogOut, Settings } from 'lucide-react'
+import { NavLink, Outlet } from 'react-router-dom'
+import { BrandLink } from './BrandLink'
 import { Button } from './ui/button'
 import { useAuth } from '@/providers/AuthProvider'
+
+const navigation = [
+  { to: '/boxes', label: 'Boxes', icon: Boxes },
+  { to: '/settings', label: 'Settings', icon: Settings },
+]
 
 export function AppShell() {
   const { membership, user, signOut } = useAuth()
   return (
-    <div className="min-h-dvh bg-zinc-950 text-zinc-100">
-      <header className="sticky top-0 z-40 border-b border-zinc-800 bg-zinc-950/90 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-          <Link to="/boxes" className="flex items-center gap-2 font-bold tracking-tight"><span className="grid h-9 w-9 place-items-center rounded-xl bg-white text-zinc-950"><Box className="h-5 w-5" /></span><span>QR Box Storage</span></Link>
-          <div className="flex items-center gap-1">
-            <NavLink to="/settings" aria-label="Settings" className={({ isActive }) => `grid h-11 w-11 place-items-center rounded-xl transition ${isActive ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'}`}><Settings className="h-5 w-5" /></NavLink>
-            <Button variant="ghost" size="icon" onClick={() => void signOut()} aria-label="Sign out"><LogOut className="h-5 w-5" /></Button>
-          </div>
+    <div className="flex min-h-dvh flex-col">
+      <header className="sticky top-0 z-40 border-b border-border bg-background">
+        <div className="page-width flex min-h-[4.5rem] items-center justify-between gap-2 sm:min-h-[5.25rem]">
+          <BrandLink to="/boxes" />
+          <nav aria-label="Inventory navigation" className="flex items-center gap-1">
+            {navigation.map(({ to, label, icon: Icon }) => (
+              <NavLink
+                key={to}
+                to={to}
+                aria-label={label}
+                className={({ isActive }) => `inline-flex min-h-11 min-w-10 items-center justify-center gap-2 rounded-lg px-2 text-sm font-semibold transition sm:px-3 ${isActive ? 'bg-secondary text-primary' : 'text-muted-foreground hover:bg-muted hover:text-primary'}`}
+              >
+                <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
+                <span className="hidden sm:inline">{label}</span>
+              </NavLink>
+            ))}
+            <Button variant="ghost" size="icon" onClick={() => void signOut()} aria-label="Sign out" title="Sign out">
+              <LogOut className="h-[18px] w-[18px]" aria-hidden="true" />
+            </Button>
+          </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10"><Outlet /></main>
-      <footer className="mx-auto max-w-7xl border-t border-zinc-900 px-4 py-8 text-xs text-zinc-600 sm:px-6">{membership?.household?.name ?? 'Household'} · Signed in as {user?.email}</footer>
+      <main className="page-width flex-1 py-8 sm:py-12"><Outlet /></main>
+      <footer className="border-t border-border">
+        <div className="page-width flex flex-wrap justify-between gap-x-6 gap-y-1 py-5 text-sm text-muted-foreground">
+          <p className="min-w-0 break-words">{membership?.household?.name ?? 'Household'}</p>
+          {user?.email && <p className="min-w-0 break-words">Signed in as {user.email}</p>}
+        </div>
+      </footer>
     </div>
   )
 }
