@@ -1,6 +1,7 @@
 import { Boxes, LogOut, Settings } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { BrandLink } from './BrandLink'
+import { ThemeToggle } from './ThemeToggle'
 import { Button } from './ui/button'
 import { useAuth } from '@/providers/AuthProvider'
 
@@ -28,6 +29,7 @@ export function AppShell() {
                 <span className="hidden sm:inline">{label}</span>
               </NavLink>
             ))}
+            <ThemeToggle className="hidden sm:inline-flex" />
             <Button variant="ghost" size="icon" onClick={() => void signOut()} aria-label="Sign out" title="Sign out">
               <LogOut className="h-[18px] w-[18px]" aria-hidden="true" />
             </Button>

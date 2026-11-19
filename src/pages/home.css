@@ -16,21 +16,21 @@
 .marketing h1, .marketing h2 { font-family: var(--font-display); font-weight: 500; letter-spacing: -0.046em; }
 .marketing-hero { padding-block: clamp(3rem, 8vw, 6.25rem); display: grid; grid-template-columns: 1.03fr 1fr; gap: clamp(2rem, 6vw, 5rem); align-items: center; }
 .marketing-hero h1 { max-width: 34rem; font-size: clamp(3.1rem, 6.6vw, 6.1rem); line-height: 0.98; }
-.marketing-hero h1 em { color: #31634c; }
+.marketing-hero h1 em { color: var(--primary-text); }
 .marketing-hero p { max-width: 29rem; margin-block: 1.55rem 1.6rem; font-size: clamp(1.05rem, 2vw, 1.24rem); line-height: 1.55; color: var(--muted-foreground); }
 .marketing-trust { display: flex; align-items: center; gap: 0.45rem; margin-top: 1rem; font-size: 0.91rem; color: var(--muted-foreground); }
 .marketing-trust svg { flex: none; color: var(--primary); }
 .marketing h2 { font-size: clamp(2.05rem, 4.4vw, 3.35rem); line-height: 1.05; }
 .marketing-how { background: var(--muted); border-block: 1px solid var(--border); padding-block: clamp(2.4rem, 5vw, 4.35rem); }
 .marketing-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.6rem; margin-top: 1.75rem; }
-.marketing-steps article { border-top: 1px solid #9db3a2; padding-top: 1.2rem; }
-.marketing-steps svg, .marketing-plan svg { color: #31634c; }
+.marketing-steps article { border-top: 1px solid var(--border); padding-top: 1.2rem; }
+.marketing-steps svg, .marketing-plan svg { color: var(--primary-text); }
 .marketing-steps h3, .marketing-plan h3 { font-weight: 750; font-size: 1.18rem; margin-top: 0.62rem; }
 .marketing-steps p, .marketing-pricing-title p { color: var(--muted-foreground); margin-top: 0.4rem; max-width: 27rem; line-height: 1.55; }
 .marketing-pricing { padding-block: clamp(2.6rem, 6vw, 5rem); }
 .marketing-plans { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1.55rem; max-width: 51rem; }
 .marketing-plan { display: flex; flex-direction: column; align-items: flex-start; padding: clamp(1.15rem, 3vw, 1.75rem); background: var(--card); border: 1px solid var(--border); border-radius: 0.85rem; }
-.marketing-family { background: var(--secondary); border-color: #b6cbb8; }
+.marketing-family { background: var(--secondary); border-color: var(--border); }
 .marketing-plan h3 { margin-top: 0; }
 .marketing-price { margin-top: 0.15rem; font-family: var(--font-display); font-size: 2.6rem; }
 .marketing-price span { font: 500 0.9rem system-ui, sans-serif; color: var(--muted-foreground); }
@@ -51,4 +51,8 @@
   .marketing-nav-text { display: none; }
   .marketing-nav-cta { padding-inline: 0.8rem; }
   .marketing-steps, .marketing-plans { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 410px) {
+  .marketing-nav .marketing-nav-cta { display: none; }
 }

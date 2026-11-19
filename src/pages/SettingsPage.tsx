@@ -1,5 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { AppearanceCard } from '@/components/AppearanceCard'
 import { BillingCard } from '@/components/BillingCard'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Clipboard, MapPin, Plus, Tag, Trash2, UserMinus, Users } from 'lucide-react'
@@ -25,6 +26,7 @@ export function SettingsPage() {
   if (locations.isLoading || categories.isLoading) return <LoadingScreen label="Loading settings…" />
   if (locations.error || categories.error) return <ErrorPanel message={errorMessage(locations.error || categories.error)} />
   return <><div className="mb-8"><p className="text-sm font-semibold text-primary">{currentMembership.household?.name}</p><h1 className="page-title mt-2">Settings</h1><p className="mt-2 text-muted-foreground">Keep shared labels tidy and manage who can access this household.</p></div><div className="grid gap-6 lg:grid-cols-2"><ResourceManager title="Locations" icon={<MapPin className="h-5 w-5" />} table="locations" householdId={householdId} resources={locations.data ?? []} /><ResourceManager title="Categories" icon={<Tag className="h-5 w-5" />} table="categories" householdId={householdId} resources={categories.data ?? []} /></div>{currentMembership.role === 'owner' ? <MemberManager householdId={householdId} currentUserId={currentMembership.user_id} /> : <Card className="mt-6"><CardHeader><h2 className="font-bold">Household members</h2></CardHeader><CardContent><p className="text-sm text-muted-foreground">Only the household owner can invite or remove members.</p></CardContent></Card>}
+    <AppearanceCard />
     <BillingCard householdId={householdId} isOwner={currentMembership.role === 'owner'} />
     <Card className="mt-6"><CardHeader><h2 className="font-bold">Your account</h2></CardHeader><CardContent>
       <Link className="text-sm text-danger underline underline-offset-4" to="/account/delete">Delete your account</Link>

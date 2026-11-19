@@ -1,3 +1,4 @@
+import { ThemeToggle } from '@/components/ThemeToggle'
 import { ArrowLeft, ShieldCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -6,9 +7,12 @@ export function PrivacyPage() {
   return (
     <main className="min-h-dvh bg-background px-4 py-10 text-foreground">
       <article className="mx-auto w-full max-w-3xl">
-        <Link className="mb-6 inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" to="/login">
-          <ArrowLeft className="h-4 w-4" /> Back to sign in
-        </Link>
+        <div className="mb-6 flex items-center justify-between gap-2">
+          <Link className="inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground hover:text-primary" to="/login">
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Back to sign in
+          </Link>
+          <ThemeToggle />
+        </div>
         <Card>
           <CardHeader>
             <div className="mb-4 grid h-12 w-12 place-items-center rounded-xl bg-secondary text-primary"><ShieldCheck className="h-6 w-6" /></div>
