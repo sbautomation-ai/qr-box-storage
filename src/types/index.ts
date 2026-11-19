@@ -30,7 +30,7 @@ export type BoxRecord = {
   description: string | null
   location_id: string
   category_id: string
-  created_by: string
+  created_by: string | null
   created_at: string
   updated_at: string
   location?: Pick<NamedResource, 'id' | 'name'> | null
@@ -70,7 +70,7 @@ export type InventoryMovement = {
   quantity: number
   kind: MovementKind
   note: string | null
-  created_by: string
+  created_by: string | null
   created_at: string
   item?: Pick<Item, 'id' | 'name'> | null
   from_box?: Pick<BoxRecord, 'id' | 'name'> | null
@@ -85,7 +85,7 @@ export type Photo = {
   original_name: string
   mime_type: string
   size_bytes: number
-  created_by: string
+  created_by: string | null
   created_at: string
   signed_url?: string
 }

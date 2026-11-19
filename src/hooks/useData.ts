@@ -21,6 +21,6 @@ export const useCategories = (householdId: string) => useQuery({ queryKey: query
 export const useItems = (householdId: string) => useQuery({ queryKey: queryKeys.items(householdId), queryFn: () => getItems(householdId), enabled: Boolean(householdId) })
 export const useInventory = (boxId: string) => useQuery({ queryKey: queryKeys.inventory(boxId), queryFn: () => getInventory(boxId), enabled: Boolean(boxId) })
 export const useMovements = (boxId: string) => useQuery({ queryKey: queryKeys.movements(boxId), queryFn: () => getMovements(boxId), enabled: Boolean(boxId) })
-export const usePhotos = (boxId: string) => useQuery({ queryKey: queryKeys.photos(boxId), queryFn: () => getPhotos(boxId), enabled: Boolean(boxId) })
+export const usePhotos = (boxId: string) => useQuery({ queryKey: queryKeys.photos(boxId), queryFn: () => getPhotos(boxId), enabled: Boolean(boxId), refetchInterval: 240_000, refetchOnWindowFocus: true })
 export const useMembers = (householdId: string) => useQuery({ queryKey: queryKeys.members(householdId), queryFn: () => getMembers(householdId), enabled: Boolean(householdId) })
 export const useInvites = (householdId: string) => useQuery({ queryKey: queryKeys.invites(householdId), queryFn: () => getInvites(householdId), enabled: Boolean(householdId) })

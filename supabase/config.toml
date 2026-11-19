@@ -29,3 +29,29 @@ skip_nonce_check = false
 [storage]
 enabled = true
 file_size_limit = "5MiB"
+
+[auth.rate_limit]
+email_sent = 100
+token_verifications = 100
+
+[auth.email]
+enable_signup = true
+enable_confirmations = true
+otp_length = 6
+
+[auth.email.template.confirmation]
+subject = "Confirm your QR Box Storage account"
+content_path = "./supabase/templates/sign-in-code.html"
+
+[auth.email.template.magic_link]
+subject = "Your QR Box Storage sign-in code"
+content_path = "./supabase/templates/sign-in-code.html"
+
+[functions.household-billing]
+verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.photo-cleanup]
+verify_jwt = false

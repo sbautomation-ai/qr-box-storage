@@ -62,7 +62,7 @@ export async function getPhotos(boxId: string) {
   if (error) throw error
   const photos = data as Photo[]
   if (!photos.length) return photos
-  const { data: urls, error: urlError } = await supabase.storage.from('box-photos').createSignedUrls(photos.map((photo) => photo.storage_path), 3600)
+  const { data: urls, error: urlError } = await supabase.storage.from('box-photos').createSignedUrls(photos.map((photo) => photo.storage_path), 300)
   if (urlError) throw urlError
   return photos.map((photo, index) => ({ ...photo, signed_url: urls[index]?.signedUrl }))
 }
