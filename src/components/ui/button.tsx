@@ -11,16 +11,16 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   ref,
 ) {
   const variants = {
-    default: 'bg-white text-zinc-950 hover:bg-zinc-200',
-    secondary: 'bg-zinc-800 text-zinc-50 hover:bg-zinc-700',
-    outline: 'border border-zinc-700 bg-zinc-950 text-zinc-100 hover:bg-zinc-900',
-    ghost: 'text-zinc-300 hover:bg-zinc-800 hover:text-white',
-    danger: 'bg-red-600 text-white hover:bg-red-500',
+    default: 'bg-primary text-primary-foreground hover:bg-primary-hover',
+    secondary: 'bg-secondary text-primary hover:bg-secondary-hover',
+    outline: 'border border-input bg-card text-primary hover:bg-secondary',
+    ghost: 'text-muted-foreground hover:bg-secondary hover:text-primary',
+    danger: 'bg-danger text-white hover:bg-danger-hover',
   }
   const sizes = {
     default: 'min-h-11 px-4 py-2',
     sm: 'min-h-9 px-3 py-1.5 text-xs',
-    icon: 'h-11 w-11',
+    icon: 'h-11 w-10 sm:w-11',
   }
 
   return (
@@ -28,7 +28,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       ref={ref}
       type={type}
       className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-xl text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:pointer-events-none disabled:opacity-50',
+        'inline-flex items-center justify-center gap-2 rounded-lg text-sm font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50',
         variants[variant],
         sizes[size],
         className,

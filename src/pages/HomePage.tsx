@@ -1,6 +1,7 @@
-import { Archive, Box, Check, MapPin, Printer, QrCode, Search, ShieldCheck } from 'lucide-react'
+import { Box, Check, Printer, Search, ShieldCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { BrandLink } from '@/components/BrandLink'
+import { InventoryPreview } from '@/components/InventoryPreview'
 import { billingEnabled, plans } from '@/lib/plans'
 import { useAuth } from '@/providers/AuthProvider'
 import './home.css'
@@ -11,38 +12,12 @@ const steps = [
   { icon: Search, title: 'Find it when you need it', copy: 'Search for an item and see which box it’s in and where that box lives.' },
 ]
 
-function InventoryPreview() {
-  return (
-    <figure className="inventory-preview">
-      <div className="preview-frame">
-        <div className="preview-bar">
-          <span><Archive size={17} /> Your storage boxes</span>
-          <span className="preview-dots" aria-hidden="true"><i /><i /><i /></span>
-        </div>
-        <div className="preview-body">
-          <div className="preview-search"><Search size={16} /> spare batteries</div>
-          <div className="preview-result">
-            <div className="preview-box"><Box aria-hidden="true" strokeWidth={1.1} size={42} /></div>
-            <div><strong>Small fixes &amp; tools</strong><span><MapPin size={13} /> Garage · Left shelf</span></div>
-          </div>
-          <div className="preview-line"><span>Spare batteries</span><strong>× 8</strong></div>
-          <div className="preview-line"><span>Hex key set</span><strong>× 1</strong></div>
-        </div>
-      </div>
-      <div className="preview-label" aria-hidden="true">
-        <QrCode size={44} strokeWidth={1.8} /><span><strong>Small fixes</strong><small>Scan this box</small></span>
-      </div>
-      <figcaption>Example inventory</figcaption>
-    </figure>
-  )
-}
-
 export function HomePage() {
   const { session } = useAuth()
   const start = session ? '/boxes' : '/signup'
   return (
     <div className="marketing">
-      <header className="marketing-wrap marketing-nav">
+      <header className="page-width marketing-nav">
         <BrandLink />
         <nav aria-label="Main navigation">
           <a className="marketing-nav-text" href="#pricing">Pricing</a>
@@ -53,7 +28,7 @@ export function HomePage() {
         </nav>
       </header>
       <main>
-        <section className="marketing-wrap marketing-hero">
+        <section className="page-width marketing-hero">
           <div>
             <h1>Know what’s in <em>every box.</em></h1>
             <p>Label your storage boxes, keep track of what’s inside, and find what you need without opening every lid.</p>
@@ -64,7 +39,7 @@ export function HomePage() {
         </section>
 
         <section className="marketing-how" aria-labelledby="how-title">
-          <div className="marketing-wrap">
+          <div className="page-width">
             <h2 id="how-title">From packed away to found.</h2>
             <div className="marketing-steps">
               {steps.map(({ icon: Icon, title, copy }) => (
@@ -77,7 +52,7 @@ export function HomePage() {
           </div>
         </section>
 
-        <section id="pricing" className="marketing-wrap marketing-pricing" aria-labelledby="pricing-title">
+        <section id="pricing" className="page-width marketing-pricing" aria-labelledby="pricing-title">
           <div className="marketing-pricing-title"><h2 id="pricing-title">Plans for your household</h2><p>Start with Free. Upgrade as your inventory grows.</p></div>
           <div className="marketing-plans">
             {Object.entries(plans).map(([id, plan]) => (
@@ -97,7 +72,7 @@ export function HomePage() {
           </div>
         </section>
       </main>
-      <footer className="marketing-footer"><div className="marketing-wrap">
+      <footer className="marketing-footer"><div className="page-width">
         <BrandLink />
         <div><Link to="/privacy">Privacy</Link><Link to="/account/delete">Delete account</Link></div>
       </div></footer>

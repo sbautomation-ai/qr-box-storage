@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Navigate, Link, useSearchParams } from 'react-router-dom'
-import { BrandLink } from '@/components/BrandLink'
+import { AccountLayout } from '@/components/AccountLayout'
+import { InventoryPreview } from '@/components/InventoryPreview'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -72,36 +73,33 @@ export function LoginPage({ mode = 'login' }: { mode?: 'login' | 'signup' }) {
   }
 
   return (
-    <main className="grid min-h-dvh place-items-center bg-[#eef1e6] px-4 py-10 text-zinc-100">
-      <div className="w-full max-w-md">
-        <div className="mb-6 flex justify-center text-[#202c24]"><BrandLink /></div>
-        <Card className="border-[#32584a] bg-[#152d24]">
+    <AccountLayout preview={<InventoryPreview />}>
+        <Card className="sm:p-4">
           <CardHeader>
-            <h1 className="text-3xl font-bold tracking-tight">{signup ? 'Create your account' : 'Log in'}</h1>
-            <p className="mt-2 text-[#c1d1c6]">{signup ? 'Start a household or use an invitation to join one.' : 'Open your private household inventory.'}</p>
+            <h1 className="page-title">{signup ? 'Create your account' : 'Log in'}</h1>
+            <p className="mt-2 text-muted-foreground">{signup ? 'Start a household or use an invitation to join one.' : 'Open your private household inventory.'}</p>
           </CardHeader>
           <CardContent>
-            {(configurationError || error) && <p role="alert" className="mb-4 rounded-lg bg-red-950/80 p-3 text-sm text-red-100">{configurationError || error}</p>}
+            {(configurationError || error) && <p role="alert" className="mb-4 rounded-lg bg-danger-surface p-3 text-sm text-danger">{configurationError || error}</p>}
             {emailAuthEnabled && <form onSubmit={submit} className="space-y-4">
               {sentEmail ? (
                 <>
-                  <p className="text-sm text-[#c1d1c6]" role="status">If we can sign you in, a code will arrive at <strong className="break-all">{sentEmail}</strong>.</p>
+                  <p className="text-sm text-muted-foreground" role="status">If we can sign you in, a code will arrive at <strong className="break-all">{sentEmail}</strong>.</p>
                   <div><Label htmlFor="email-code">Verification code</Label><Input id="email-code" className="mt-1.5" inputMode="numeric" autoComplete="one-time-code" value={code} onChange={(event) => setCode(event.target.value)} required /></div>
                 </>
               ) : (
                 <div><Label htmlFor="auth-email">Email address</Label><Input id="auth-email" className="mt-1.5" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></div>
               )}
               <Button className="w-full" type="submit" disabled={busy || Boolean(configurationError)}>{busy ? 'Please wait…' : sentEmail ? 'Verify code' : 'Send sign-in code'}</Button>
-              {sentEmail && <button className="text-sm text-[#c1d1c6] underline underline-offset-4" type="button" disabled={busy} onClick={() => { setSentEmail(''); setCode(''); setError('') }}>Use a different email or request a new code</button>}
+              {sentEmail && <button className="text-sm text-muted-foreground underline underline-offset-4" type="button" disabled={busy} onClick={() => { setSentEmail(''); setCode(''); setError('') }}>Use a different email or request a new code</button>}
             </form>}
-            {!sentEmail && <Button type="button" variant={emailAuthEnabled ? 'outline' : 'default'} className={emailAuthEnabled ? 'mt-3 w-full border-[#537466] bg-transparent' : 'w-full'} onClick={() => void google()} disabled={busy || Boolean(configurationError)}>Continue with Google</Button>}
-            <div className="mt-6 flex flex-wrap justify-between gap-3 text-sm text-[#c1d1c6]">
+            {!sentEmail && <Button type="button" variant={emailAuthEnabled ? 'outline' : 'default'} className={emailAuthEnabled ? 'mt-3 w-full' : 'w-full'} onClick={() => void google()} disabled={busy || Boolean(configurationError)}>Continue with Google</Button>}
+            <div className="mt-7 flex flex-wrap justify-between gap-3 border-t border-border pt-5 text-sm text-primary">
               <Link className="underline underline-offset-4" to={authLink(signup ? 'login' : 'signup', returnTo)}>{signup ? 'Already have an account? Log in' : 'New here? Sign up'}</Link>
               <Link className="underline underline-offset-4" to="/privacy">Privacy</Link>
             </div>
           </CardContent>
         </Card>
-      </div>
-    </main>
+    </AccountLayout>
   )
 }

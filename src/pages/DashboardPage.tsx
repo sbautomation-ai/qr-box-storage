@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Box, MapPin, Plus, Printer, Search, Tag, X } from 'lucide-react'
+import { Box, MapPin, Plus, Printer, Search, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import QRCode from 'qrcode'
 import { EmptyState, ErrorPanel, LoadingScreen } from '@/components/Feedback'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import { Dialog } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -35,20 +35,94 @@ export function DashboardPage() {
   if (boxes.isLoading || locations.isLoading || categories.isLoading) return <LoadingScreen />
   if (boxes.error) return <ErrorPanel message={errorMessage(boxes.error)} retry={() => void boxes.refetch()} />
 
-  return <>
-    <section className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-      <div><p className="text-sm font-medium text-zinc-500">{membership?.household?.name}</p><h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">Your storage boxes</h1><p className="mt-2 text-zinc-400">Search every box and item, or scan a label to jump straight in.</p></div>
-      <div className="flex flex-wrap gap-2">{Boolean(boxes.data?.length) && <Button variant="outline" onClick={() => setPrintOpen(true)}><Printer className="h-4 w-4" />Print labels</Button>}<Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4" />New box</Button></div>
-    </section>
-    <section className="mb-6 grid gap-3 md:grid-cols-[minmax(0,1fr)_220px_220px]" aria-label="Box filters">
-      <div className="relative"><Search className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-zinc-500" /><Input aria-label="Search boxes and items" placeholder="Search boxes and items…" value={search} onChange={(event) => setSearch(event.target.value)} className="pl-10" /></div>
-      <Select aria-label="Filter by location" value={locationId} onChange={(event) => setLocationId(event.target.value)}><option value="">All locations</option>{locations.data?.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}</Select>
-      <Select aria-label="Filter by category" value={categoryId} onChange={(event) => setCategoryId(event.target.value)}><option value="">All categories</option>{categories.data?.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</Select>
-    </section>
-    {filtered.length ? <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{filtered.map((boxRecord) => <Link key={boxRecord.id} to={`/boxes/${boxRecord.id}`} className="group rounded-2xl focus:outline-none focus:ring-2 focus:ring-white"><Card className="h-full transition group-hover:-translate-y-0.5 group-hover:border-zinc-600"><CardHeader><div className="flex items-start justify-between gap-3"><h2 className="text-xl font-bold">{boxRecord.name}</h2><Box className="h-5 w-5 shrink-0 text-zinc-600" /></div></CardHeader><CardContent><div className="space-y-2 text-sm text-zinc-400"><p className="flex items-center gap-2"><MapPin className="h-4 w-4" />{boxRecord.location?.name}</p><p className="flex items-center gap-2"><Tag className="h-4 w-4" />{boxRecord.category?.name}</p></div>{boxRecord.description && <p className="mt-4 line-clamp-3 text-sm text-zinc-300">{boxRecord.description}</p>}<p className="mt-5 text-xs text-zinc-400">{boxRecord.box_inventory?.length ?? 0} item types</p>{search.trim() && <ul className="mt-2 space-y-1 text-sm text-zinc-200">{boxRecord.box_inventory?.filter(({ item }) => item?.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())).map(({ item, quantity }) => <li key={item!.id} className="flex justify-between gap-2"><span>{item!.name}</span><span>× {quantity}</span></li>)}</ul>}</CardContent></Card></Link>)}</div> : <EmptyState title={search || locationId || categoryId ? 'No matching boxes' : 'Create your first box'} message={search || locationId || categoryId ? 'Try another search or clear a filter.' : 'Create a box and add any missing location or category along the way.'} action={!search && !locationId && !categoryId ? <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4" />New box</Button> : undefined} />}
-    <BoxFormDialog open={createOpen} onOpenChange={setCreateOpen} householdId={householdId} locations={locations.data ?? []} categories={categories.data ?? []} />
-    <BatchPrintDialog open={printOpen} onOpenChange={setPrintOpen} boxes={boxes.data ?? []} />
-  </>
+  const total = boxes.data?.length ?? 0
+  const query = search.trim().toLocaleLowerCase()
+  const hasFilters = Boolean(query || locationId || categoryId)
+
+  return (
+    <>
+      <section className="relative mb-6 overflow-hidden rounded-[1.4rem] border border-border bg-secondary px-5 py-6 sm:px-8 sm:py-8">
+        <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-2/5 opacity-40 sm:block" aria-hidden="true"
+          style={{ backgroundImage: 'radial-gradient(var(--input) 1px, transparent 1px)', backgroundSize: '14px 14px', maskImage: 'linear-gradient(to right, transparent, black)' }}
+        />
+        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="mb-2 break-words text-sm font-semibold text-primary">{membership?.household?.name}</p>
+            <h1 className="page-title">Your storage boxes</h1>
+            <p className="mt-3 max-w-md text-muted-foreground">Search for an item or open a box to see what’s inside.</p>
+          </div>
+          <div className="flex flex-wrap gap-2.5">
+            <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4" aria-hidden="true" />New box</Button>
+            {total > 0 && <Button variant="outline" onClick={() => setPrintOpen(true)}><Printer className="h-4 w-4" aria-hidden="true" />Print labels</Button>}
+          </div>
+        </div>
+      </section>
+
+      <section className="mb-6 grid gap-3 min-[365px]:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_12rem_12rem]" aria-label="Box filters">
+        <div className="relative min-[365px]:col-span-2 lg:col-span-1">
+          <Search className="pointer-events-none absolute left-3 top-3.5 h-[18px] w-[18px] text-muted-foreground" aria-hidden="true" />
+          <Input type="search" aria-label="Search boxes and items" placeholder="Search boxes and items…" value={search} onChange={(event) => setSearch(event.target.value)} className="pl-10" />
+        </div>
+        <Select aria-label="Filter by location" value={locationId} onChange={(event) => setLocationId(event.target.value)}>
+          <option value="">All locations</option>
+          {locations.data?.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
+        </Select>
+        <Select aria-label="Filter by category" value={categoryId} onChange={(event) => setCategoryId(event.target.value)}>
+          <option value="">All categories</option>
+          {categories.data?.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+        </Select>
+      </section>
+
+      {filtered.length > 0 ? (
+        <>
+          <p role="status" className="mb-3 text-sm font-medium text-muted-foreground">
+            {hasFilters ? `${filtered.length} of ${total}` : total} {total === 1 ? 'box' : 'boxes'}
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filtered.map((box) => <BoxCard key={box.id} box={box} query={query} />)}
+          </div>
+        </>
+      ) : (
+        <EmptyState
+          title={hasFilters ? 'No matching boxes' : 'Create your first box'}
+          message={hasFilters ? 'Try a different search or clear the filters.' : 'Choose a name, location and category to get started.'}
+          action={hasFilters ? <Button variant="outline" onClick={() => { setSearch(''); setLocationId(''); setCategoryId('') }}>Clear filters</Button> : undefined}
+        />
+      )}
+
+      <BoxFormDialog open={createOpen} onOpenChange={setCreateOpen} householdId={householdId} locations={locations.data ?? []} categories={categories.data ?? []} />
+      <BatchPrintDialog open={printOpen} onOpenChange={setPrintOpen} boxes={boxes.data ?? []} />
+    </>
+  )
+}
+
+function BoxCard({ box, query }: { box: BoxRecord; query: string }) {
+  const count = box.box_inventory?.length ?? 0
+  const matches = query ? box.box_inventory?.filter(({ item }) => item?.name.toLocaleLowerCase().includes(query)) : undefined
+  return (
+    <Link to={`/boxes/${box.id}`} className="group block rounded-2xl">
+      <Card className="flex h-full flex-col gap-4 p-5 transition-colors group-hover:border-input">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[10px] bg-accent text-accent-foreground">
+            <Box size={23} strokeWidth={1.55} aria-hidden="true" />
+          </span>
+          {box.category && <span className="max-w-full break-words rounded-full bg-muted px-2.5 py-1 text-sm text-muted-foreground">{box.category.name}</span>}
+        </div>
+        <div>
+          <h2 className="break-words font-display text-[1.6rem] leading-tight tracking-tight group-hover:text-primary">{box.name}</h2>
+          {box.location && <p className="mt-1.5 flex items-start gap-1.5 break-words text-sm text-muted-foreground"><MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /><span className="min-w-0">{box.location.name}</span></p>}
+          {box.description && <p className="mt-3 line-clamp-2 break-words text-sm text-muted-foreground">{box.description}</p>}
+        </div>
+        <div className="mt-auto border-t border-border pt-3">
+          {matches?.length ? (
+            <ul className="space-y-1 text-sm">
+              {matches.map(({ item, quantity }) => <li key={item!.id} className="flex justify-between gap-3"><span className="min-w-0 break-words">{item!.name}</span><span className="shrink-0 text-muted-foreground">× {quantity}</span></li>)}
+            </ul>
+          ) : <p className="text-sm text-muted-foreground">{count} item {count === 1 ? 'type' : 'types'}</p>}
+        </div>
+      </Card>
+    </Link>
+  )
 }
 
 function BatchPrintDialog({ open, onOpenChange, boxes }: { open: boolean; onOpenChange: (open: boolean) => void; boxes: BoxRecord[] }) {
@@ -89,7 +163,7 @@ function BatchPrintDialog({ open, onOpenChange, boxes }: { open: boolean; onOpen
     }
   }
 
-  return <Dialog open={open} onOpenChange={onOpenChange} title="Print QR labels" description="Choose boxes to arrange as compact labels on A4 paper." className="max-w-2xl"><div className="mb-3 flex items-center justify-between gap-3"><p className="text-sm text-zinc-400">{selectedIds.length} of {boxes.length} selected</p><div className="flex gap-2"><Button size="sm" variant="ghost" onClick={() => setSelectedIds(boxes.map((box) => box.id))}>Select all</Button><Button size="sm" variant="ghost" onClick={() => setSelectedIds([])}>Clear</Button></div></div><fieldset className="max-h-[50dvh] space-y-2 overflow-y-auto pr-1"><legend className="sr-only">Boxes to print</legend>{boxes.map((box) => { const checked = selectedIds.includes(box.id); return <label key={box.id} className="flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 hover:border-zinc-600"><input type="checkbox" checked={checked} onChange={() => setSelectedIds((current) => checked ? current.filter((id) => id !== box.id) : [...current, box.id])} className="h-5 w-5 accent-white" /><span className="min-w-0"><span className="block truncate text-sm font-medium">{box.name}</span><span className="block truncate text-xs text-zinc-500">{box.location?.name} · {box.category?.name}</span></span></label> })}</fieldset><Button className="mt-5 w-full" disabled={!selectedIds.length || printing} onClick={() => void printLabels()}><Printer className="h-4 w-4" />{printing ? 'Preparing labels…' : `Print ${selectedIds.length} label${selectedIds.length === 1 ? '' : 's'}`}</Button></Dialog>
+  return <Dialog open={open} onOpenChange={onOpenChange} title="Print QR labels" description="Choose boxes to arrange as compact labels on A4 paper." className="max-w-2xl"><div className="mb-3 flex items-center justify-between gap-3"><p className="text-sm text-muted-foreground">{selectedIds.length} of {boxes.length} selected</p><div className="flex gap-2"><Button size="sm" variant="ghost" onClick={() => setSelectedIds(boxes.map((box) => box.id))}>Select all</Button><Button size="sm" variant="ghost" onClick={() => setSelectedIds([])}>Clear</Button></div></div><fieldset className="max-h-[50dvh] space-y-2 overflow-y-auto pr-1"><legend className="sr-only">Boxes to print</legend>{boxes.map((box) => { const checked = selectedIds.includes(box.id); return <label key={box.id} className="flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border border-border bg-background px-3 py-2 hover:border-input"><input type="checkbox" checked={checked} onChange={() => setSelectedIds((current) => checked ? current.filter((id) => id !== box.id) : [...current, box.id])} className="h-5 w-5 accent-primary" /><span className="min-w-0"><span className="block truncate text-sm font-medium">{box.name}</span><span className="block truncate text-xs text-muted-foreground">{box.location?.name} · {box.category?.name}</span></span></label> })}</fieldset><Button className="mt-5 w-full" disabled={!selectedIds.length || printing} onClick={() => void printLabels()}><Printer className="h-4 w-4" />{printing ? 'Preparing labels…' : `Print ${selectedIds.length} label${selectedIds.length === 1 ? '' : 's'}`}</Button></Dialog>
 }
 
 function BoxFormDialog({ open, onOpenChange, householdId, locations, categories }: { open: boolean; onOpenChange: (open: boolean) => void; householdId: string; locations: Array<{ id: string; name: string }>; categories: Array<{ id: string; name: string }> }) {
@@ -130,5 +204,5 @@ function BoxFormDialog({ open, onOpenChange, householdId, locations, categories 
     await client.invalidateQueries({ queryKey: key })
   } })
   function submit(event: FormEvent) { event.preventDefault(); create.mutate() }
-  return <Dialog open={open} onOpenChange={onOpenChange} title="Create a box" description="Choose its home and category, or add either one without leaving this dialog."><form onSubmit={submit} className="space-y-4"><div><Label htmlFor="box-name">Name</Label><Input id="box-name" required maxLength={120} value={name} onChange={(event) => setName(event.target.value)} autoFocus /></div><div className="grid gap-4 sm:grid-cols-2"><div><Label htmlFor="box-location">Location</Label><div className="flex gap-2"><Select id="box-location" required value={locationId} onChange={(event) => setLocationId(event.target.value)}><option value="">Choose…</option>{locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}</Select><Button variant="outline" size="icon" aria-label="Add new location" title="Add new location" onClick={() => { createResource.reset(); setAddingCategory(false); setAddingLocation(true) }}><Plus className="h-4 w-4" /></Button></div>{addingLocation && <div className="mt-2 flex gap-2"><Input aria-label="New location name" placeholder="New location…" maxLength={80} value={newLocation} onChange={(event) => setNewLocation(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); if (newLocation.trim()) createResource.mutate({ table: 'locations', resourceName: newLocation }) } if (event.key === 'Escape') { setAddingLocation(false); setNewLocation('') } }} autoFocus /><Button size="sm" disabled={createResource.isPending || !newLocation.trim()} onClick={() => createResource.mutate({ table: 'locations', resourceName: newLocation })}>{createResource.isPending && createResource.variables?.table === 'locations' ? 'Adding…' : 'Add'}</Button><Button variant="ghost" size="icon" aria-label="Cancel new location" onClick={() => { setAddingLocation(false); setNewLocation(''); createResource.reset() }}><X className="h-4 w-4" /></Button></div>}{createResource.error && createResource.variables?.table === 'locations' && <p className="mt-2 text-sm text-red-300" role="alert">{errorMessage(createResource.error)}</p>}</div><div><Label htmlFor="box-category">Category</Label><div className="flex gap-2"><Select id="box-category" required value={categoryId} onChange={(event) => setCategoryId(event.target.value)}><option value="">Choose…</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</Select><Button variant="outline" size="icon" aria-label="Add new category" title="Add new category" onClick={() => { createResource.reset(); setAddingLocation(false); setAddingCategory(true) }}><Plus className="h-4 w-4" /></Button></div>{addingCategory && <div className="mt-2 flex gap-2"><Input aria-label="New category name" placeholder="New category…" maxLength={80} value={newCategory} onChange={(event) => setNewCategory(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); if (newCategory.trim()) createResource.mutate({ table: 'categories', resourceName: newCategory }) } if (event.key === 'Escape') { setAddingCategory(false); setNewCategory('') } }} autoFocus /><Button size="sm" disabled={createResource.isPending || !newCategory.trim()} onClick={() => createResource.mutate({ table: 'categories', resourceName: newCategory })}>{createResource.isPending && createResource.variables?.table === 'categories' ? 'Adding…' : 'Add'}</Button><Button variant="ghost" size="icon" aria-label="Cancel new category" onClick={() => { setAddingCategory(false); setNewCategory(''); createResource.reset() }}><X className="h-4 w-4" /></Button></div>}{createResource.error && createResource.variables?.table === 'categories' && <p className="mt-2 text-sm text-red-300" role="alert">{errorMessage(createResource.error)}</p>}</div></div><div><Label htmlFor="box-description">Description</Label><Textarea id="box-description" maxLength={1000} value={description} onChange={(event) => setDescription(event.target.value)} placeholder="What is this box for?" /></div>{create.error && <p className="text-sm text-red-300" role="alert">{errorMessage(create.error)}</p>}<Button type="submit" className="w-full" disabled={create.isPending || !locationId || !categoryId}>{create.isPending ? 'Creating…' : 'Create box'}</Button></form></Dialog>
+  return <Dialog open={open} onOpenChange={onOpenChange} title="Create a box" description="Choose its home and category, or add either one without leaving this dialog."><form onSubmit={submit} className="space-y-4"><div><Label htmlFor="box-name">Name</Label><Input id="box-name" required maxLength={120} value={name} onChange={(event) => setName(event.target.value)} autoFocus /></div><div className="grid gap-4 sm:grid-cols-2"><div><Label htmlFor="box-location">Location</Label><div className="flex gap-2"><Select id="box-location" required value={locationId} onChange={(event) => setLocationId(event.target.value)}><option value="">Choose…</option>{locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}</Select><Button variant="outline" size="icon" aria-label="Add new location" title="Add new location" onClick={() => { createResource.reset(); setAddingCategory(false); setAddingLocation(true) }}><Plus className="h-4 w-4" /></Button></div>{addingLocation && <div className="mt-2 flex gap-2"><Input aria-label="New location name" placeholder="New location…" maxLength={80} value={newLocation} onChange={(event) => setNewLocation(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); if (newLocation.trim()) createResource.mutate({ table: 'locations', resourceName: newLocation }) } if (event.key === 'Escape') { setAddingLocation(false); setNewLocation('') } }} autoFocus /><Button size="sm" disabled={createResource.isPending || !newLocation.trim()} onClick={() => createResource.mutate({ table: 'locations', resourceName: newLocation })}>{createResource.isPending && createResource.variables?.table === 'locations' ? 'Adding…' : 'Add'}</Button><Button variant="ghost" size="icon" aria-label="Cancel new location" onClick={() => { setAddingLocation(false); setNewLocation(''); createResource.reset() }}><X className="h-4 w-4" /></Button></div>}{createResource.error && createResource.variables?.table === 'locations' && <p className="mt-2 text-sm text-danger" role="alert">{errorMessage(createResource.error)}</p>}</div><div><Label htmlFor="box-category">Category</Label><div className="flex gap-2"><Select id="box-category" required value={categoryId} onChange={(event) => setCategoryId(event.target.value)}><option value="">Choose…</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</Select><Button variant="outline" size="icon" aria-label="Add new category" title="Add new category" onClick={() => { createResource.reset(); setAddingLocation(false); setAddingCategory(true) }}><Plus className="h-4 w-4" /></Button></div>{addingCategory && <div className="mt-2 flex gap-2"><Input aria-label="New category name" placeholder="New category…" maxLength={80} value={newCategory} onChange={(event) => setNewCategory(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); if (newCategory.trim()) createResource.mutate({ table: 'categories', resourceName: newCategory }) } if (event.key === 'Escape') { setAddingCategory(false); setNewCategory('') } }} autoFocus /><Button size="sm" disabled={createResource.isPending || !newCategory.trim()} onClick={() => createResource.mutate({ table: 'categories', resourceName: newCategory })}>{createResource.isPending && createResource.variables?.table === 'categories' ? 'Adding…' : 'Add'}</Button><Button variant="ghost" size="icon" aria-label="Cancel new category" onClick={() => { setAddingCategory(false); setNewCategory(''); createResource.reset() }}><X className="h-4 w-4" /></Button></div>}{createResource.error && createResource.variables?.table === 'categories' && <p className="mt-2 text-sm text-danger" role="alert">{errorMessage(createResource.error)}</p>}</div></div><div><Label htmlFor="box-description">Description</Label><Textarea id="box-description" maxLength={1000} value={description} onChange={(event) => setDescription(event.target.value)} placeholder="What is this box for?" /></div>{create.error && <p className="text-sm text-danger" role="alert">{errorMessage(create.error)}</p>}<Button type="submit" className="w-full" disabled={create.isPending || !locationId || !categoryId}>{create.isPending ? 'Creating…' : 'Create box'}</Button></form></Dialog>
 }

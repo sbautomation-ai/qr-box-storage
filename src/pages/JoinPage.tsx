@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { CircleAlert, Users } from 'lucide-react'
+import { AccountLayout } from '@/components/AccountLayout'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { errorMessage, supabase } from '@/lib/supabase'
@@ -32,5 +33,22 @@ export function JoinPage() {
     }
   }
 
-  return <main className="grid min-h-dvh place-items-center bg-zinc-950 p-4 text-zinc-100"><Card className="w-full max-w-md"><CardHeader className="text-center"><Users className="mx-auto h-10 w-10" /><h1 className="mt-4 text-2xl font-bold">Join this household</h1><p className="mt-2 text-sm text-zinc-400">Sign in with the email address that received the invitation.</p></CardHeader><CardContent>{error && <div className="mb-4 flex gap-2 rounded-xl border border-red-900 bg-red-950/40 p-3 text-sm text-red-200"><CircleAlert className="h-5 w-5 shrink-0" />{error}</div>}<Button className="w-full" disabled={busy || !token} onClick={() => void accept()}>{busy ? 'Joining…' : 'Accept invitation'}</Button><div className="mt-4 break-all text-sm text-zinc-400">Signed in as {user?.email}. <button type="button" className="underline" onClick={() => void signOut()}>Use another account</button></div></CardContent></Card></main>
+  return (
+    <AccountLayout>
+      <Card className="sm:p-4">
+        <CardHeader>
+          <Users className="mb-4 h-9 w-9 text-primary" aria-hidden="true" />
+          <h1 className="page-title">Join this household</h1>
+          <p className="mt-2 text-muted-foreground">Sign in with the email address that received the invitation.</p>
+        </CardHeader>
+        <CardContent>
+          {error && <div role="alert" className="mb-4 flex gap-2 rounded-lg border border-danger-border bg-danger-surface p-3 text-sm text-danger"><CircleAlert className="h-5 w-5 shrink-0" aria-hidden="true" />{error}</div>}
+          <Button className="w-full" disabled={busy || !token} onClick={() => void accept()}>{busy ? 'Joining…' : 'Accept invitation'}</Button>
+          <p className="mt-4 break-words text-sm text-muted-foreground">
+            Signed in as {user?.email}. <button type="button" className="text-primary underline underline-offset-4" onClick={() => void signOut()}>Use another account</button>
+          </p>
+        </CardContent>
+      </Card>
+    </AccountLayout>
+  )
 }

@@ -45,21 +45,21 @@ export function BillingCard({ householdId, isOwner }: { householdId: string; isO
     <Card className="mt-6" id="billing">
       <CardHeader><h2 className="font-bold">Household plan</h2></CardHeader>
       <CardContent className="space-y-3">
-        {plan.isPending && <p className="text-sm text-zinc-400">Loading your plan…</p>}
-        {plan.error && <p className="text-sm text-red-300" role="alert">Couldn’t load your plan. <button type="button" className="underline" onClick={() => void plan.refetch()}>Retry</button></p>}
-        {currentPlan && <p className="text-sm text-zinc-300"><strong>{currentPlan.name}</strong> · {currentPlan.boxes} active boxes · {currentPlan.members} members · {currentPlan.photos} photos</p>}
-        {checkoutFinished && <p role="status" className="text-sm text-zinc-300">{plan.data === 'family' ? 'Family is active.' : 'We’re confirming your payment. Check back shortly if Family hasn’t appeared.'}</p>}
-        {params.get('billing') === 'cancelled' && <p role="status" className="text-sm text-zinc-300">Checkout was closed. Your plan is unchanged.</p>}
-        {plan.data === 'free' && !billingEnabled && <p className="text-sm text-zinc-400">Family subscriptions open soon.</p>}
+        {plan.isPending && <p className="text-sm text-muted-foreground">Loading your plan…</p>}
+        {plan.error && <p className="text-sm text-danger" role="alert">Couldn’t load your plan. <button type="button" className="underline" onClick={() => void plan.refetch()}>Retry</button></p>}
+        {currentPlan && <p className="text-sm text-muted-foreground"><strong>{currentPlan.name}</strong> · {currentPlan.boxes} active boxes · {currentPlan.members} members · {currentPlan.photos} photos</p>}
+        {checkoutFinished && <p role="status" className="text-sm text-muted-foreground">{plan.data === 'family' ? 'Family is active.' : 'We’re confirming your payment. Check back shortly if Family hasn’t appeared.'}</p>}
+        {params.get('billing') === 'cancelled' && <p role="status" className="text-sm text-muted-foreground">Checkout was closed. Your plan is unchanged.</p>}
+        {plan.data === 'free' && !billingEnabled && <p className="text-sm text-muted-foreground">Family subscriptions open soon.</p>}
         {billingEnabled && isOwner && currentPlan && (
           <>
-            {billing.error && <p className="text-sm text-red-300" role="alert">{errorMessage(billing.error)}</p>}
+            {billing.error && <p className="text-sm text-danger" role="alert">{errorMessage(billing.error)}</p>}
             <Button type="button" variant="outline" disabled={checkout.isPending || billing.isFetching} onClick={() => checkout.mutate(canManage ? 'portal' : 'checkout')}>
               {checkout.isPending ? 'Opening Stripe…' : canManage ? 'Manage subscription' : `Upgrade to Family · ${plans.family.price}/year`}
             </Button>
           </>
         )}
-        {checkout.error && <p className="text-sm text-red-300" role="alert">{errorMessage(checkout.error)}</p>}
+        {checkout.error && <p className="text-sm text-danger" role="alert">{errorMessage(checkout.error)}</p>}
       </CardContent>
     </Card>
   )
