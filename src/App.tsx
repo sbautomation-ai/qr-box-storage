@@ -3,6 +3,8 @@ import { AppShell } from '@/components/AppShell'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { AuthCallbackPage } from '@/pages/AuthCallbackPage'
 import { BoxPage } from '@/pages/BoxPage'
+import { DeleteAccountPage } from '@/pages/DeleteAccountPage'
+import { HomePage } from '@/pages/HomePage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { JoinPage } from '@/pages/JoinPage'
 import { LoginPage } from '@/pages/LoginPage'
@@ -13,7 +15,10 @@ import { SetupRequiredPage } from '@/pages/SetupRequiredPage'
 export default function App() {
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
+      <Route path="/" element={<HomePage />} />
+      <Route path="/login" element={<LoginPage key="login" />} />
+      <Route path="/signup" element={<LoginPage key="signup" mode="signup" />} />
+      <Route path="/account/delete" element={<DeleteAccountPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
       <Route element={<ProtectedRoute />}>
@@ -25,7 +30,7 @@ export default function App() {
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Route>
-      <Route path="*" element={<Navigate to="/boxes" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }

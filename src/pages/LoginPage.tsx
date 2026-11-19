@@ -1,50 +1,107 @@
-import { Box, Chrome, ShieldCheck } from 'lucide-react'
-import { Navigate, useSearchParams } from 'react-router-dom'
+import { useState, type FormEvent } from 'react'
+import { Navigate, Link, useSearchParams } from 'react-router-dom'
+import { BrandLink } from '@/components/BrandLink'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { configurationError, errorMessage, supabase } from '@/lib/supabase'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { authLink, safeReturnTo } from '@/lib/auth'
+import { configurationError, supabase } from '@/lib/supabase'
 import { useAuth } from '@/providers/AuthProvider'
-import { useState } from 'react'
 
-export function LoginPage() {
-  const { session, membership } = useAuth()
+const emailAuthEnabled = import.meta.env.DEV || import.meta.env.VITE_EMAIL_AUTH_ENABLED === 'true'
+
+export function LoginPage({ mode = 'login' }: { mode?: 'login' | 'signup' }) {
+  const { session } = useAuth()
   const [params] = useSearchParams()
-  const [error, setError] = useState(configurationError)
+  const signup = mode === 'signup'
+  const returnTo = safeReturnTo(params.get('returnTo'))
+  const [email, setEmail] = useState('')
+  const [sentEmail, setSentEmail] = useState('')
+  const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)
-  const returnTo = params.get('returnTo') || '/boxes'
+  const [error, setError] = useState(params.has('error') ? 'Sign-in couldn’t be completed. Please try again.' : '')
 
-  if (session && membership) return <Navigate to={returnTo} replace />
+  if (session) return <Navigate to={returnTo} replace />
 
-  async function signIn() {
+  function callbackUrl() {
+    const url = new URL('/auth/callback', window.location.origin)
+    url.searchParams.set('returnTo', returnTo)
+    return url.toString()
+  }
+
+  async function google() {
     setBusy(true)
-    setError(null)
-    const callback = new URL('/auth/callback', window.location.origin)
-    callback.searchParams.set('returnTo', returnTo.startsWith('/') ? returnTo : '/boxes')
-    const { error: authError } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: callback.toString() },
-    })
-    if (authError) {
-      setError(errorMessage(authError))
+    setError('')
+    try {
+      const { error: authError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: callbackUrl() },
+      })
+      if (authError) throw authError
+    } catch {
+      setError(emailAuthEnabled ? 'Google sign-in is unavailable. Try again or use email.' : 'Google sign-in is unavailable. Try again in a moment.')
+      setBusy(false)
+    }
+  }
+
+  async function submit(event: FormEvent) {
+    event.preventDefault()
+    setBusy(true)
+    setError('')
+    try {
+      if (sentEmail) {
+        const { error: codeError } = await supabase.auth.verifyOtp({ email: sentEmail, token: code.trim(), type: 'email' })
+        if (codeError) throw codeError
+      } else {
+        const address = email.trim().toLowerCase()
+        const { error: sendError } = await supabase.auth.signInWithOtp({
+          email: address,
+          options: { shouldCreateUser: signup, emailRedirectTo: callbackUrl() },
+        })
+        if (sendError && sendError.code !== 'otp_disabled') throw sendError
+        setSentEmail(address)
+      }
+    } catch {
+      setError(sentEmail
+        ? 'That code is invalid or expired. Request a new code and try again.'
+        : 'We couldn’t send a sign-in code. Wait a moment and try again.')
+    } finally {
       setBusy(false)
     }
   }
 
   return (
-    <main className="grid min-h-dvh place-items-center bg-zinc-950 p-4 text-zinc-100">
-      <Card className="w-full max-w-md bg-zinc-900">
-        <CardHeader className="text-center">
-          <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white text-zinc-950"><Box className="h-7 w-7" /></div>
-          <h1 className="mt-5 text-3xl font-bold">QR Box Storage</h1>
-          <p className="mt-2 text-sm text-zinc-400">Private household inventory that is always one scan away.</p>
-        </CardHeader>
-        <CardContent>
-          {error && <p className="mb-4 rounded-xl border border-red-900 bg-red-950/50 p-3 text-sm text-red-200" role="alert">{error}</p>}
-          <Button className="w-full" onClick={() => void signIn()} disabled={busy || Boolean(configurationError)}><Chrome className="h-5 w-5" />{busy ? 'Opening Google…' : 'Continue with Google'}</Button>
-          <div className="mt-5 flex items-start gap-2 text-xs leading-relaxed text-zinc-500"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" /><p>Only invited Google accounts can access a household. Box contents and photos remain private.</p></div>
-          <p className="mt-4 text-center text-xs text-zinc-500"><a className="underline underline-offset-4 hover:text-zinc-200" href="/privacy">Privacy policy</a></p>
-        </CardContent>
-      </Card>
+    <main className="grid min-h-dvh place-items-center bg-[#eef1e6] px-4 py-10 text-zinc-100">
+      <div className="w-full max-w-md">
+        <div className="mb-6 flex justify-center text-[#202c24]"><BrandLink /></div>
+        <Card className="border-[#32584a] bg-[#152d24]">
+          <CardHeader>
+            <h1 className="text-3xl font-bold tracking-tight">{signup ? 'Create your account' : 'Log in'}</h1>
+            <p className="mt-2 text-[#c1d1c6]">{signup ? 'Start a household or use an invitation to join one.' : 'Open your private household inventory.'}</p>
+          </CardHeader>
+          <CardContent>
+            {(configurationError || error) && <p role="alert" className="mb-4 rounded-lg bg-red-950/80 p-3 text-sm text-red-100">{configurationError || error}</p>}
+            {emailAuthEnabled && <form onSubmit={submit} className="space-y-4">
+              {sentEmail ? (
+                <>
+                  <p className="text-sm text-[#c1d1c6]" role="status">If we can sign you in, a code will arrive at <strong className="break-all">{sentEmail}</strong>.</p>
+                  <div><Label htmlFor="email-code">Verification code</Label><Input id="email-code" className="mt-1.5" inputMode="numeric" autoComplete="one-time-code" value={code} onChange={(event) => setCode(event.target.value)} required /></div>
+                </>
+              ) : (
+                <div><Label htmlFor="auth-email">Email address</Label><Input id="auth-email" className="mt-1.5" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></div>
+              )}
+              <Button className="w-full" type="submit" disabled={busy || Boolean(configurationError)}>{busy ? 'Please wait…' : sentEmail ? 'Verify code' : 'Send sign-in code'}</Button>
+              {sentEmail && <button className="text-sm text-[#c1d1c6] underline underline-offset-4" type="button" disabled={busy} onClick={() => { setSentEmail(''); setCode(''); setError('') }}>Use a different email or request a new code</button>}
+            </form>}
+            {!sentEmail && <Button type="button" variant={emailAuthEnabled ? 'outline' : 'default'} className={emailAuthEnabled ? 'mt-3 w-full border-[#537466] bg-transparent' : 'w-full'} onClick={() => void google()} disabled={busy || Boolean(configurationError)}>Continue with Google</Button>}
+            <div className="mt-6 flex flex-wrap justify-between gap-3 text-sm text-[#c1d1c6]">
+              <Link className="underline underline-offset-4" to={authLink(signup ? 'login' : 'signup', returnTo)}>{signup ? 'Already have an account? Log in' : 'New here? Sign up'}</Link>
+              <Link className="underline underline-offset-4" to="/privacy">Privacy</Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </main>
   )
 }

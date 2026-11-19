@@ -1,11 +1,12 @@
 # QR Box Storage
 
-A private, shared household inventory for QR-labelled storage boxes. Family members sign in with Google, search boxes and their contents, record additions/removals/transfers, attach private photos, and print QR labels that reopen the correct box after authentication.
+A private, shared household inventory for QR-labelled storage boxes. Households can sign up using an email code or Google, search boxes and their contents, record inventory movements, attach private photos, and print QR labels that reopen the correct box after authentication.
 
 ## Architecture
 
 - React 19, TypeScript, Vite, React Router, TanStack Query, Tailwind CSS, and accessible Radix dialogs.
 - Supabase Auth, Postgres, Row Level Security, transactional RPCs, and private Storage.
+- Supabase Edge Functions for photo cleanup and Stripe Checkout, the billing portal, and webhooks.
 - Vercel static hosting with SPA route rewrites.
 - Vitest/Testing Library, pgTAP/Supabase CLI, and Playwright verification.
 
@@ -16,7 +17,8 @@ The browser receives only a Supabase project URL and publishable key. Those valu
 - Node.js 22+
 - Docker Desktop for the local Supabase stack
 - A Supabase account and project for deployment
-- A Google Cloud project with an OAuth web client
+- An OAuth web client for hosted Google sign-in and a custom SMTP provider for email codes
+- A Stripe account to enable paid web checkout
 - Vercel CLI/account access for deployment
 
 ## Local development
@@ -33,7 +35,7 @@ Copy `API_URL` and `PUBLISHABLE_KEY` from `npx supabase status` into `.env.local
 npm run dev
 ```
 
-Google OAuth is disabled in `supabase/config.toml` by default so database tests work without secrets. For a full local OAuth flow, create a Google web client, enable the local Google provider, and place its secret in an untracked environment file. Alternatively, point `.env.local` at a configured hosted Supabase development project.
+Local email signup and login use the codes delivered to Mailpit at `http://127.0.0.1:54324`. Google OAuth is disabled locally by default. To test Google, use a configured development backend or set up a local OAuth client with its secret outside Git.
 
 Useful checks:
 
@@ -41,13 +43,13 @@ Useful checks:
 npm run check
 npx supabase db lint --local --level warning
 npx supabase test db
-npm run test:e2e
+E2E_MAILPIT_URL=http://127.0.0.1:54324 npm run test:e2e
 ```
 
-## Create the hosted backend
+## Prepare the hosted backend
 
-1. Create a new Supabase project and note its project reference, URL, and publishable key.
-2. Link and migrate it:
+1. Resume the existing Supabase project if it is paused. Keep the existing project and public label URL when releasing an update so active sessions and previously printed labels still work. For a new installation, create a Supabase project and note its reference, URL, and publishable key.
+2. Back up the existing database and Storage objects, then link and migrate the intended project:
 
    ```bash
    npx supabase login
@@ -62,27 +64,27 @@ npm run test:e2e
    - `http://localhost:5173/auth/callback`
    - `https://qr-box-storage.vercel.app/auth/callback`
    - the intended Vercel preview URL pattern
-7. Restrict the Google OAuth audience to the intended family accounts while testing. Publish the consent screen only when ready.
+7. For email sign-in, enable email signup and email confirmations. Configure custom SMTP for external recipients, then apply `supabase/templates/sign-in-code.html` to both the Confirm signup and Magic link templates. Keep the `{{ .Token }}` variable in each. Set `VITE_EMAIL_AUTH_ENABLED=true` after verifying email delivery. Builds without it offer Google sign-in only. Use the intended Google OAuth audience for the release.
+8. Deploy `photo-cleanup` and schedule a POST every five minutes from Supabase Cron. Set `PHOTO_CLEANUP_SECRET` as an Edge Function secret and store the same value in Vault for the scheduled `Authorization: Bearer …` header. Use the function URL `https://<project-ref>.supabase.co/functions/v1/photo-cleanup`. Monitor failures and the age of the oldest `photo_cleanup` row. See [Scheduling Edge Functions](https://supabase.com/docs/guides/functions/schedule-functions).
+
+Deploy the updated frontend after the migration because it uses the new invite RPC and photo reservation flow. Open app tabs should reload after the deploy.
 
 Never put the Google client secret, Supabase secret/service-role key, or database password in a `VITE_` variable.
 
-## Bootstrap the first owner
+## Household signup
 
-There is deliberately no “first user wins” behavior.
+The public homepage offers signup and login. After verifying their email or signing in with Google, users can create one household from the app. Invite links open a sign-in flow and require the matching verified email. They expire after seven days and can be accepted once. Owners can transfer ownership in Settings, and users can delete their accounts at `/account/delete`.
 
-1. Sign in with the intended owner’s Google account. The app displays their Supabase user UUID on the **Household access required** screen.
-2. In the Supabase SQL Editor, run:
+## Enable the yearly Family plan
 
-   ```sql
-   select public.bootstrap_household(
-     'PASTE-OWNER-USER-UUID-HERE'::uuid,
-     'Family Home'
-   );
-   ```
+Free households have 10 active boxes, 2 members, and 10 photos. Family has 200 active boxes, 5 members, and 200 photos. The per-photo cap is 5 MiB on both plans. An expired subscription preserves existing records and applies the Free caps to new additions.
 
-3. Refresh the app. The owner can now add locations/categories and invite other family members from Settings.
+Use a Stripe sandbox before enabling live sales:
 
-Invitation links are restricted to the entered Google email, expire after seven days, and are single use. Full tokens are intentionally not stored in readable database columns, so copy the link when it is created.
+1. Create an active EUR 29 yearly recurring price and configure the Stripe customer portal for payment updates and cancellations. For immediate account deletion or ownership transfer after cancellation, allow immediate cancellation. Configure applicable taxes and publish your payment terms before enabling live checkout.
+2. Set `APP_URL` (the exact web origin), `STRIPE_SECRET_KEY`, `STRIPE_FAMILY_PRICE_ID`, and `STRIPE_WEBHOOK_SECRET` as Supabase Edge Function secrets. Use the matching Stripe environment throughout. Keep these values out of Git and out of Vercel's public `VITE_` variables.
+3. Deploy `household-billing` and `stripe-webhook`. Configure Stripe to send `checkout.session.completed`, `checkout.session.expired`, `customer.subscription.created`, `customer.subscription.updated`, and `customer.subscription.deleted` to `https://<project-ref>.supabase.co/functions/v1/stripe-webhook`.
+4. Set `STRIPE_CHECKOUT_ENABLED=true` in that Supabase environment, set `VITE_BILLING_ENABLED=true` for its frontend, and redeploy. Verify sandbox checkout, plan activation, renewal and cancellation. Before public signup or paid launch, run the create/invite/QR/photo/delete smoke test on the intended host.
 
 ## Deploy with Vercel
 
@@ -97,7 +99,7 @@ vercel deploy
 vercel deploy --prod
 ```
 
-Use `https://qr-box-storage.vercel.app` for `VITE_APP_URL`. Add equivalent variables for Preview if previews should connect to the backend. Deploy a preview first, complete the smoke tests, and only then promote to production.
+Keep `VITE_APP_URL` on the production host printed on existing labels. Point Vercel Preview to a separate staging Supabase project. Deploy a preview first, complete the smoke tests, and only then promote to production.
 
 ## Data and security behavior
 
@@ -106,7 +108,7 @@ Use `https://qr-box-storage.vercel.app` for `VITE_APP_URL`. Add equivalent varia
 - Only owners can create/revoke invitations or remove members; the final owner cannot be removed.
 - Item changes go through `record_inventory_movement`, which locks balances and atomically applies add/remove/transfer operations.
 - Archived boxes are hidden, their current stock is removed through history entries, and their historical movements remain available in Postgres.
-- Photo objects use `<household>/<box>/<uuid>.<ext>` paths in a private bucket. Signed display URLs expire after one hour.
+- Photo objects use `<household>/<box>/<uuid>.<ext>` paths in a private bucket. Signed display URLs expire after five minutes. Uploads reserve a database row first. Archiving or deleting a photo queues the file for retryable cleanup.
 - QR codes contain only the private box route. Scanning while signed out returns to the requested box after Google authentication.
 
 ## Backups and maintenance
@@ -120,7 +122,7 @@ Use `https://qr-box-storage.vercel.app` for `VITE_APP_URL`. Add equivalent varia
 ## Troubleshooting
 
 - **Google redirects to an error:** confirm the Google callback URI exactly matches the callback displayed in Supabase, then check the Supabase redirect allow list.
-- **Signed in but no household:** bootstrap the owner or open a valid invitation link while signed in with the invited email.
+- **Signed in but no household:** create a household or open a valid invitation link while signed in with the invited email.
 - **A location/category cannot be deleted:** it is referenced by a box. Rename it or move the boxes first.
 - **A photo does not load:** confirm the `box-photos` bucket is private, migrations are current, and the signed URL request is made by a household member.
 - **A QR link returns 404 on Vercel:** confirm `vercel.json` was included in the deployment.

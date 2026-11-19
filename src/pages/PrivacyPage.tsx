@@ -13,12 +13,12 @@ export function PrivacyPage() {
           <CardHeader>
             <div className="mb-4 grid h-12 w-12 place-items-center rounded-xl bg-white text-zinc-950"><ShieldCheck className="h-6 w-6" /></div>
             <h1 className="text-3xl font-bold">Privacy policy</h1>
-            <p className="mt-2 text-sm text-zinc-400">Last updated 23 August 2026</p>
+            <p className="mt-2 text-sm text-zinc-400">Last updated 19 November 2026</p>
           </CardHeader>
           <CardContent className="space-y-7 leading-relaxed text-zinc-300">
             <section>
               <h2 className="mb-2 text-xl font-semibold text-white">Information we process</h2>
-              <p>QR Box Storage uses your Google account name, email address, and profile identifier to authenticate you. The app also stores inventory information, box photos, household membership, invitations, and an audit history of inventory movements that you choose to create.</p>
+              <p>QR Box Storage uses your email address and, if you sign in with Google, your Google account name and identifier to authenticate you. The app also stores inventory information, box photos, household membership, invitations, and an audit history of inventory movements that you choose to create.</p>
             </section>
             <section>
               <h2 className="mb-2 text-xl font-semibold text-white">How information is used</h2>
@@ -26,11 +26,11 @@ export function PrivacyPage() {
             </section>
             <section>
               <h2 className="mb-2 text-xl font-semibold text-white">Storage and sharing</h2>
-              <p>Application data is stored in Supabase and the web application is hosted by Vercel. Data is shared with those processors only as needed to run the service. Household data is accessible only to authenticated members of that household, subject to database row-level security.</p>
+              <p>Application data is stored in Supabase and the web application is hosted by Vercel. We use those providers to run the service. When you subscribe to Family, Stripe processes your payment and we receive the customer and subscription identifiers and billing status needed to manage access. Household data is accessible only to authenticated members of that household, subject to database row-level security.</p>
             </section>
             <section>
               <h2 className="mb-2 text-xl font-semibold text-white">Retention and deletion</h2>
-              <p>Inventory movement history is retained to preserve the household audit trail. A household owner may remove members and delete application content. To request deletion of your account data, contact the application owner at <a className="underline underline-offset-4 hover:text-white" href="mailto:sciclunaluke.93@gmail.com">sciclunaluke.93@gmail.com</a>.</p>
+              <p>Shared inventory and movement history stay with your household when you leave. Deleting your account removes your sign-in and member profile. If you are the only household member, deletion also removes the household inventory and schedules its photo files for removal. Use the <Link className="underline underline-offset-4 hover:text-white" to="/account/delete">account deletion page</Link> or email <a className="underline underline-offset-4 hover:text-white" href="mailto:sciclunaluke.93@gmail.com">sciclunaluke.93@gmail.com</a> for help.</p>
             </section>
             <section>
               <h2 className="mb-2 text-xl font-semibold text-white">Google account data</h2>

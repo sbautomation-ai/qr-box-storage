@@ -33,6 +33,14 @@ reset role;
 insert into public.household_members(household_id, user_id, role, email)
 select id, '22222222-2222-2222-2222-222222222222', 'member', 'member@example.com' from public.households where name = 'Test Home';
 
+insert into public.household_billing (household_id, stripe_customer_id, status, period_end)
+select id, 'cus_test_fixture', 'active', now() + interval '1 year' from public.households where name = 'Test Home';
+
+insert into public.household_invites(household_id, email, token_hash, created_at, expires_at, created_by)
+select id, 'mismatch@example.com', encode(extensions.digest('expired-token', 'sha256'), 'hex'), now() - interval '2 days',
+  now() - interval '1 day', '11111111-1111-1111-1111-111111111111'
+from public.households where name = 'Test Home';
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', true);
 
@@ -43,10 +51,7 @@ select 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3', id, 'Box A', 'aaaaaaaa-aaaa-aaaa-
 insert into public.boxes(id, household_id, name, location_id, category_id, created_by)
 select 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa4', id, 'Box B', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2', auth.uid() from public.households where name = 'Test Home';
 insert into public.items(id, household_id, name) select 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa5', id, 'Drill' from public.households where name = 'Test Home';
-insert into public.household_invites(household_id, email, token_hash, expires_at)
-select id, 'invited@example.com', encode(extensions.digest('join-token', 'sha256'), 'hex'), now() + interval '1 day' from public.households where name = 'Test Home';
-insert into public.household_invites(household_id, email, token_hash, created_at, expires_at)
-select id, 'mismatch@example.com', encode(extensions.digest('expired-token', 'sha256'), 'hex'), now() - interval '2 days', now() - interval '1 day' from public.households where name = 'Test Home';
+select public.create_household_invite('invited@example.com', encode(extensions.digest('join-token', 'sha256'), 'hex'));
 
 select lives_ok(
   $$select public.record_inventory_movement('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa5', null, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3', 5, 'Initial stock')$$,
@@ -84,8 +89,8 @@ select lives_ok(
   'ordinary members can edit shared inventory settings'
 );
 select throws_ok(
-  $$insert into public.household_invites(household_id, email, token_hash, expires_at) select household_id, 'new@example.com', repeat('a',64), now() + interval '1 day' from public.household_members where user_id = auth.uid()$$,
-  'new row violates row-level security policy for table "household_invites"',
+  $$select public.create_household_invite('new@example.com', repeat('a',64))$$,
+  'Owner access required',
   'ordinary members cannot create invitations'
 );
 
@@ -95,7 +100,7 @@ select results_eq($$select count(*)::bigint from public.boxes$$, array[0::bigint
 select set_config('request.jwt.claim.sub', '55555555-5555-5555-5555-555555555555', true);
 select throws_ok(
   $$select public.accept_household_invite('join-token')$$,
-  'Invitation belongs to a different Google account',
+  'Invitation belongs to a different email address',
   'invite acceptance rejects a mismatched Google email'
 );
 select throws_ok(

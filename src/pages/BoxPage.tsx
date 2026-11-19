@@ -47,14 +47,9 @@ export function BoxPage() {
   }, [box.data, qrOpen])
 
   const deleteBox = useMutation({ mutationFn: async () => {
-    const paths = (photos.data ?? []).map((photo) => photo.storage_path)
-    if (paths.length) {
-      const { error: storageError } = await supabase.storage.from('box-photos').remove(paths)
-      if (storageError) throw storageError
-    }
     const { error } = await supabase.rpc('archive_box', { p_box_id: boxId })
     if (error) throw error
-  }, onSuccess: async () => { await client.invalidateQueries({ queryKey: queryKeys.boxes(householdId) }); showToast('Box deleted'); navigate('/boxes') } })
+  }, onSuccess: async () => { await client.invalidateQueries({ queryKey: queryKeys.boxes(householdId) }); showToast('Box deleted'); navigate('/boxes') }, onError: (error) => showToast(errorMessage(error), 'error') })
 
   if (box.isLoading || inventory.isLoading) return <LoadingScreen label="Opening box…" />
   if (box.error || !box.data) return <ErrorPanel title="Box not found" message={errorMessage(box.error)} retry={() => void box.refetch()} />
@@ -134,29 +129,35 @@ function PhotoSection({ boxId, householdId, userId, photos, loading, onOpen }: {
         if (!file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) { showToast(`${file.name} must be an image under 5 MB`, 'error'); return false }
         return true
       })
-      const created = await Promise.all(valid.map(async (file) => {
+      let uploaded = 0
+      for (const file of valid) {
         const extension = file.name.split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg'
         const path = `${householdId}/${boxId}/${crypto.randomUUID()}.${extension}`
+        const { data: photo, error: databaseError } = await supabase.from('photos')
+          .insert({ household_id: householdId, box_id: boxId, storage_path: path, original_name: file.name, mime_type: file.type, size_bytes: file.size, created_by: userId })
+          .select('id').single()
+        if (databaseError) throw databaseError
         const { error: storageError } = await supabase.storage.from('box-photos').upload(path, file, { contentType: file.type, upsert: false })
-        if (storageError) throw storageError
-        const { error: databaseError } = await supabase.from('photos').insert({ household_id: householdId, box_id: boxId, storage_path: path, original_name: file.name, mime_type: file.type, size_bytes: file.size, created_by: userId })
-        if (databaseError) { await supabase.storage.from('box-photos').remove([path]); throw databaseError }
-        return path
-      }))
-      if (created.length) showToast(`${created.length} photo${created.length === 1 ? '' : 's'} uploaded`)
+        if (storageError) {
+          await supabase.from('photos').delete().eq('id', photo.id)
+          throw storageError
+        }
+        uploaded++
+      }
+      if (uploaded) showToast(`${uploaded} photo${uploaded === 1 ? '' : 's'} uploaded`)
+    } catch (error) { showToast(errorMessage(error), 'error') } finally {
       await client.invalidateQueries({ queryKey: queryKeys.photos(boxId) })
-    } catch (error) { showToast(errorMessage(error), 'error') } finally { setUploading(false) }
+      setUploading(false)
+    }
   }
-  async function remove(photo: { id: string; storage_path: string }) {
+  async function remove(photo: { id: string }) {
     if (!window.confirm('Delete this photo?')) return
-    const { error: storageError } = await supabase.storage.from('box-photos').remove([photo.storage_path])
-    if (storageError) return showToast(errorMessage(storageError), 'error')
     const { error } = await supabase.from('photos').delete().eq('id', photo.id)
     if (error) return showToast(errorMessage(error), 'error')
     await client.invalidateQueries({ queryKey: queryKeys.photos(boxId) })
     showToast('Photo deleted')
   }
-  return <Card><CardHeader className="flex-row items-center justify-between"><h2 className="font-bold">Photos</h2><label className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl border border-zinc-700 px-3 text-xs font-semibold hover:bg-zinc-800"><ImagePlus className="h-4 w-4" />{uploading ? 'Uploading…' : 'Upload'}<input type="file" accept="image/*" multiple className="sr-only" disabled={uploading} onChange={(event) => { void upload(event.target.files); event.target.value = '' }} /></label></CardHeader><CardContent>{loading ? <p className="text-sm text-zinc-500">Loading photos…</p> : photos.length ? <div className="grid grid-cols-3 gap-2">{photos.map((photo) => <div key={photo.id} className="group relative aspect-square overflow-hidden rounded-xl bg-zinc-950"><button className="h-full w-full" onClick={() => photo.signed_url && onOpen(photo.signed_url)}><img src={photo.signed_url} alt={photo.original_name} className="h-full w-full object-cover" /></button><button onClick={() => void remove(photo)} className="absolute right-1 top-1 grid h-8 w-8 place-items-center rounded-lg bg-black/70 opacity-100 hover:bg-red-600 sm:opacity-0 sm:group-hover:opacity-100" aria-label={`Delete ${photo.original_name}`}><Trash2 className="h-4 w-4" /></button></div>)}</div> : <p className="text-sm text-zinc-500">No photos yet.</p>}</CardContent></Card>
+  return <Card><CardHeader className="flex-row items-center justify-between"><h2 className="font-bold">Photos</h2><label className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl border border-zinc-700 px-3 text-xs font-semibold hover:bg-zinc-800"><ImagePlus className="h-4 w-4" />{uploading ? 'Uploading…' : 'Upload'}<input type="file" accept="image/*" multiple className="sr-only" disabled={uploading} onChange={(event) => { void upload(event.target.files); event.target.value = '' }} /></label></CardHeader><CardContent>{loading ? <p className="text-sm text-zinc-500">Loading photos…</p> : photos.length ? <div className="grid grid-cols-3 gap-2">{photos.map((photo) => <div key={photo.id} className="group relative aspect-square overflow-hidden rounded-xl bg-zinc-950"><button className="h-full w-full" onClick={() => photo.signed_url && onOpen(photo.signed_url)}>{photo.signed_url ? <img src={photo.signed_url} alt={photo.original_name} className="h-full w-full object-cover" /> : <span className="text-xs text-zinc-400">Photo unavailable</span>}</button><button onClick={() => void remove(photo)} className="absolute right-1 top-1 grid h-8 w-8 place-items-center rounded-lg bg-black/70 opacity-100 hover:bg-red-600 sm:opacity-0 sm:group-hover:opacity-100" aria-label={`Delete ${photo.original_name}`}><Trash2 className="h-4 w-4" /></button></div>)}</div> : <p className="text-sm text-zinc-500">No photos yet.</p>}</CardContent></Card>
 }
 
 function EditBoxDialog({ open, onOpenChange, box, locations, categories }: { open: boolean; onOpenChange: (open: boolean) => void; box: { id: string; household_id: string; name: string; description: string | null; location_id: string; category_id: string }; locations: Array<{ id: string; name: string }>; categories: Array<{ id: string; name: string }> }) {
