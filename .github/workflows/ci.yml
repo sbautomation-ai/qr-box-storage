@@ -42,7 +42,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npx supabase start >/dev/null
+      - name: Start browser test services
+        run: |
+          printf '\n[inbucket]\nport = 55424\n' >> supabase/config.toml
+          npx supabase start --exclude studio,imgproxy,logflare,vector,postgres-meta,realtime,edge-runtime >/dev/null
       - name: Read the local public key
         run: |
           publishable_key="$(npx supabase status -o env | awk -F'"' '/^PUBLISHABLE_KEY=/{print $2}')"
@@ -52,6 +55,6 @@ jobs:
         env:
           VITE_SUPABASE_URL: http://127.0.0.1:54321
           VITE_EMAIL_AUTH_ENABLED: 'true'
-          E2E_MAILPIT_URL: http://127.0.0.1:54324
+          E2E_MAILPIT_URL: http://127.0.0.1:55424
       - if: always()
         run: npx supabase stop --no-backup
