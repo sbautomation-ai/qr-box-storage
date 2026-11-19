@@ -13,3 +13,18 @@ test('offers signup and login on the public site', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Log in' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Continue with Google' })).toBeVisible()
 })
+
+test('follows the device theme until a choice is saved', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' })
+  await page.goto('/')
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+  await page.emulateMedia({ colorScheme: 'light' })
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+  await page.getByRole('button', { name: 'Switch to dark mode' }).click()
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+  await page.getByRole('link', { name: 'Log in', exact: true }).click()
+  await page.reload()
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+  await page.getByRole('button', { name: 'Switch to light mode' }).click()
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+})

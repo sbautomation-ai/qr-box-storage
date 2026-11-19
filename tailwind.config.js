@@ -29,7 +29,8 @@ export default {
         },
         danger: {
           DEFAULT: 'var(--danger)',
-          hover: 'var(--danger-hover)',
+          action: 'var(--danger-action)',
+          'action-hover': 'var(--danger-action-hover)',
           surface: 'var(--danger-surface)',
           border: 'var(--danger-border)',
         },

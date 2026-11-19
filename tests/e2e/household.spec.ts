@@ -73,6 +73,11 @@ test('signs up separate households, shares a box by invite, and deletes a member
   await expect(page.getByRole('link', { name: /Garage tools.*Spare batteries.*8/ })).toBeVisible()
 
   await page.getByRole('link', { name: 'Settings' }).click()
+  await page.emulateMedia({ colorScheme: 'light' })
+  await page.getByLabel('Theme', { exact: true }).selectOption('dark')
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+  await page.getByLabel('Theme', { exact: true }).selectOption('system')
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
   await page.getByRole('button', { name: 'Invite', exact: true }).click()
   await page.getByRole('dialog').getByLabel('Email address').fill(memberEmail)
   await page.getByRole('button', { name: 'Create invitation' }).click()

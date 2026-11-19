@@ -1,3 +1,4 @@
+import { ThemeToggle } from '@/components/ThemeToggle'
 import { Box, Check, Printer, Search, ShieldCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { BrandLink } from '@/components/BrandLink'
@@ -21,10 +22,11 @@ export function HomePage() {
         <BrandLink />
         <nav aria-label="Main navigation">
           <a className="marketing-nav-text" href="#pricing">Pricing</a>
-          {session ? <Link className="marketing-button" to="/boxes">Open inventory</Link> : <>
+          {session ? <Link className="marketing-button marketing-nav-cta" to="/boxes">Open inventory</Link> : <>
             <Link className="marketing-login" to="/login">Log in</Link>
             <Link className="marketing-button marketing-nav-cta" to="/signup">Sign up</Link>
           </>}
+          <ThemeToggle />
         </nav>
       </header>
       <main>

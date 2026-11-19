@@ -15,7 +15,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     secondary: 'bg-secondary text-primary hover:bg-secondary-hover',
     outline: 'border border-input bg-card text-primary hover:bg-secondary',
     ghost: 'text-muted-foreground hover:bg-secondary hover:text-primary',
-    danger: 'bg-danger text-white hover:bg-danger-hover',
+    danger: 'bg-danger-action text-white hover:bg-danger-action-hover',
   }
   const sizes = {
     default: 'min-h-11 px-4 py-2',
