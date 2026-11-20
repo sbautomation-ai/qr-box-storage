@@ -69,6 +69,7 @@ export function HomePage() {
                 {id === 'free' ? <Link className="marketing-button" to={start}>{session ? 'Open inventory' : 'Start free'}</Link>
                   : billingEnabled ? <Link className="marketing-button" to={session ? '/settings?plan=family' : '/signup?returnTo=%2Fsettings%3Fplan%3Dfamily'}>Choose Family</Link>
                     : <p className="marketing-plan-note">Family subscriptions open soon.</p>}
+                {id === 'family' && <Link className="mt-3 w-fit text-sm text-muted-foreground underline underline-offset-4 hover:text-primary" to="/cancellation-and-refunds">Cancellation and refunds</Link>}
               </article>
             ))}
           </div>
@@ -76,7 +77,7 @@ export function HomePage() {
       </main>
       <footer className="marketing-footer"><div className="page-width">
         <BrandLink />
-        <div><Link to="/privacy">Privacy</Link><Link to="/account/delete">Delete account</Link></div>
+        <div><Link to="/privacy">Privacy</Link><Link to="/cancellation-and-refunds">Cancellation and refunds</Link><Link to="/account/delete">Delete account</Link></div>
       </div></footer>
     </div>
   )

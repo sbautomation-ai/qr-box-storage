@@ -3,6 +3,7 @@ import { AppShell } from '@/components/AppShell'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { AuthCallbackPage } from '@/pages/AuthCallbackPage'
 import { BoxPage } from '@/pages/BoxPage'
+import { CancellationAndRefundsPage } from '@/pages/CancellationAndRefundsPage'
 import { DeleteAccountPage } from '@/pages/DeleteAccountPage'
 import { HomePage } from '@/pages/HomePage'
 import { DashboardPage } from '@/pages/DashboardPage'
@@ -20,6 +21,7 @@ export default function App() {
       <Route path="/signup" element={<LoginPage key="signup" mode="signup" />} />
       <Route path="/account/delete" element={<DeleteAccountPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/cancellation-and-refunds" element={<CancellationAndRefundsPage />} />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
       <Route element={<ProtectedRoute />}>
         <Route path="/join/:token" element={<JoinPage />} />
