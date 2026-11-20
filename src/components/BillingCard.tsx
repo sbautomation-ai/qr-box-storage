@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { billingEnabled, plans } from '@/lib/plans'
@@ -60,6 +60,7 @@ export function BillingCard({ householdId, isOwner }: { householdId: string; isO
           </>
         )}
         {checkout.error && <p className="text-sm text-danger" role="alert">{errorMessage(checkout.error)}</p>}
+        <p className="text-sm text-muted-foreground"><Link className="underline underline-offset-4 hover:text-primary" to="/cancellation-and-refunds">Cancellation and refunds</Link></p>
       </CardContent>
     </Card>
   )
