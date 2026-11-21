@@ -1,59 +1,21 @@
 import { useState } from 'react'
-import { ArrowLeft, ArrowRight, Box, MapPin, QrCode, Search } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Box, MapPin, Search } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { BrandLink } from '@/components/BrandLink'
+import { SampleQrLabel } from '@/components/SampleQrLabel'
 import { ThemeToggle } from '@/components/ThemeToggle'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Dialog } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { demoBoxes, demoBoxPath, searchDemoBoxes } from '@/lib/demo'
 import { useAuth } from '@/providers/AuthProvider'
-
-const boxes = [
-  { slug: 'tools', name: 'Small fixes & tools', location: 'Garage · Left shelf', items: [['Spare batteries', 8], ['Hex key set', 1], ['Extension cord', 2]] },
-  { slug: 'camping', name: 'Camping kit', location: 'Garage · Top shelf', items: [['Headlamp', 2], ['Tent pegs', 12], ['First-aid kit', 1]] },
-  { slug: 'holiday', name: 'Holiday decorations', location: 'Attic · By the hatch', items: [['String lights', 3], ['Tree ornaments', 24], ['Tree stand', 1]] },
-] as const
-
-const demoPath = (slug: string) => `/demo/${slug}`
-
-function SampleQrLabel({ box }: { box: (typeof boxes)[number] }) {
-  const [open, setOpen] = useState(false)
-  const [qrUrl, setQrUrl] = useState('')
-  const [error, setError] = useState(false)
-
-  async function showLabel() {
-    setOpen(true)
-    if (qrUrl) return
-    setError(false)
-    try {
-      const QRCode = await import('qrcode')
-      const url = new URL(demoPath(box.slug), window.location.origin)
-      setQrUrl(await QRCode.toDataURL(url.href, { width: 256, margin: 4 }))
-    } catch {
-      setError(true)
-    }
-  }
-
-  return (
-    <>
-      <Button type="button" variant="outline" onClick={() => void showLabel()}><QrCode className="h-4 w-4" aria-hidden="true" /> Show sample QR label</Button>
-      <Dialog open={open} onOpenChange={setOpen} title={`QR label for ${box.name}`} description="Scan this code with another device to reopen this sample box.">
-        {qrUrl ? <img src={qrUrl} width={256} height={256} className="mx-auto h-auto w-full max-w-64 rounded-xl bg-white" alt={`QR code for ${box.name}`} />
-          : <p role="status" className="text-sm text-muted-foreground">{error ? 'The label couldn’t load. Close this window and try again.' : 'Generating your sample label…'}</p>}
-      </Dialog>
-    </>
-  )
-}
 
 export function DemoPage() {
   const { slug } = useParams()
   const { session } = useAuth()
   const [search, setSearch] = useState('')
-  const query = search.trim().toLowerCase()
-  const selected = boxes.find((box) => box.slug === slug)
-  const matches = boxes.filter((box) => [box.name, box.location, ...box.items.map(([item]) => item)].some((text) => text.toLowerCase().includes(query)))
+  const selected = demoBoxes.find((box) => box.slug === slug)
+  const matches = searchDemoBoxes(search)
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
@@ -91,7 +53,7 @@ export function DemoPage() {
               <ul className="mt-4 space-y-3">
                 {matches.map((box) => (
                   <li key={box.slug}>
-                    <Link to={demoPath(box.slug)} className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 hover:border-primary hover:bg-secondary sm:gap-4">
+                    <Link to={demoBoxPath(box.slug)} className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 hover:border-primary hover:bg-secondary sm:gap-4">
                       <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-secondary text-primary"><Box className="h-5 w-5" aria-hidden="true" /></span>
                       <span className="min-w-0 flex-1"><strong className="block">{box.name}</strong><span className="block text-sm text-muted-foreground">{box.location}</span></span>
                       <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />

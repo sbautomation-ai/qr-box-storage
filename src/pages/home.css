@@ -14,15 +14,25 @@
 .marketing-button:hover { background: var(--primary-hover); }
 .marketing-primary { min-height: 3.25rem; padding-inline: 1.35rem; }
 .marketing h1, .marketing h2 { font-family: var(--font-display); font-weight: 500; letter-spacing: -0.046em; }
-.marketing-hero { padding-block: clamp(3rem, 8vw, 6.25rem); display: grid; grid-template-columns: 1.03fr 1fr; gap: clamp(2rem, 6vw, 5rem); align-items: center; }
+.marketing-hero { padding-block: clamp(3rem, 8vw, 6.25rem); display: grid; grid-template-columns: minmax(0, 1.03fr) minmax(0, 1fr); gap: clamp(2rem, 6vw, 5rem); align-items: center; }
 .marketing-hero h1 { max-width: 34rem; font-size: clamp(3.1rem, 6.6vw, 6.1rem); line-height: 0.98; }
 .marketing-hero h1 em { color: var(--primary-text); }
-.marketing-hero p { max-width: 29rem; margin-block: 1.55rem 1.6rem; font-size: clamp(1.05rem, 2vw, 1.24rem); line-height: 1.55; color: var(--muted-foreground); }
+.marketing-hero-copy > p { max-width: 29rem; margin-block: 1.55rem 1.6rem; font-size: clamp(1.05rem, 2vw, 1.24rem); line-height: 1.55; color: var(--muted-foreground); }
 .marketing-hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.65rem 1.25rem; }
 .marketing-demo-link { display: inline-flex; align-items: center; min-height: 2.75rem; font-weight: 650; text-decoration: underline; text-underline-offset: 4px; color: var(--primary-text); }
 .marketing-trust { display: flex; align-items: center; gap: 0.45rem; margin-top: 1rem; font-size: 0.91rem; color: var(--muted-foreground); }
 .marketing-trust svg { flex: none; color: var(--primary); }
 .marketing h2 { font-size: clamp(2.05rem, 4.4vw, 3.35rem); line-height: 1.05; }
+.home-demo { width: 100%; max-width: 34rem; padding: clamp(0.75rem, 2.7vw, 2rem); scroll-margin-top: 1rem; background: var(--secondary-hover); border: 1px solid var(--border); border-radius: 1.6rem 1.6rem 3.5rem 1.6rem; }
+.home-demo-frame { overflow: hidden; border: 1px solid var(--border); border-radius: 1rem; background: var(--card); }
+.home-demo-header { display: flex; align-items: center; gap: 0.6rem; padding: 0.85rem 1rem; background: var(--primary); color: var(--primary-foreground); }
+.marketing .home-demo-header h2 { font: inherit; font-weight: 700; letter-spacing: 0; }
+.home-demo-body { display: flex; flex-direction: column; min-height: 20rem; padding: clamp(0.65rem, 2vw, 1rem); }
+.home-demo-text-action { display: inline-flex; min-height: 2.75rem; align-items: center; gap: 0.4rem; border-radius: 0.25rem; color: var(--primary-text); font-size: 0.875rem; font-weight: 650; text-decoration: underline; text-underline-offset: 4px; }
+.home-demo-body > .home-demo-text-action { margin-top: auto; }
+.home-demo-result { display: flex; width: 100%; min-height: 3.25rem; align-items: center; gap: 0.6rem; padding: 0.5rem 0.65rem; border-radius: 0.65rem; text-align: left; }
+.home-demo-result:hover { background: var(--secondary); }
+.home-demo:focus-visible, .home-demo button:focus-visible, .home-demo h3:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .marketing-how { background: var(--muted); border-block: 1px solid var(--border); padding-block: clamp(2.4rem, 5vw, 4.35rem); }
 .marketing-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.6rem; margin-top: 1.75rem; }
 .marketing-steps article { border-top: 1px solid var(--border); padding-top: 1.2rem; }
