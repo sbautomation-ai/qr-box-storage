@@ -9,10 +9,18 @@ import { searchDemoBoxes, type DemoBox } from '@/lib/demo'
 export function HomeInventoryDemo() {
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState<DemoBox | null>(null)
+  const demoSection = useRef<HTMLElement>(null)
   const detailsHeading = useRef<HTMLHeadingElement>(null)
   const returnTo = useRef<DemoBox['slug'] | null>(null)
   const resultButtons = useRef<Partial<Record<DemoBox['slug'], HTMLButtonElement | null>>>({})
   const matches = searchDemoBoxes(search)
+
+  useLayoutEffect(() => {
+    if (window.location.hash !== '#try-demo') return
+    // The browser can look for the fragment before React mounts this section.
+    demoSection.current?.scrollIntoView({ block: 'start' })
+    demoSection.current?.focus({ preventScroll: true })
+  }, [])
 
   useLayoutEffect(() => {
     if (selected) {
@@ -24,7 +32,7 @@ export function HomeInventoryDemo() {
   }, [selected])
 
   return (
-    <section id="try-demo" tabIndex={-1} aria-labelledby="sample-inventory-title" className="home-demo">
+    <section ref={demoSection} id="try-demo" tabIndex={-1} aria-labelledby="sample-inventory-title" className="home-demo">
       <div className="home-demo-frame">
         <header className="home-demo-header">
           <Archive size={18} aria-hidden="true" />
