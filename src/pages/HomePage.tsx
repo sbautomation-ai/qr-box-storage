@@ -3,7 +3,6 @@ import { Box, Check, Printer, Search, ShieldCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { BrandLink } from '@/components/BrandLink'
 import { HomeInventoryDemo } from '@/components/HomeInventoryDemo'
-import { InventoryPreview } from '@/components/InventoryPreview'
 import { billingEnabled, plans } from '@/lib/plans'
 import { useAuth } from '@/providers/AuthProvider'
 import './home.css'
@@ -37,11 +36,11 @@ export function HomePage() {
             <p>Label your storage boxes, keep track of what’s inside, and find what you need without opening every lid.</p>
             <div className="marketing-hero-actions">
               <Link className="marketing-button marketing-primary" to={start}>{session ? 'Open inventory' : 'Get started free'}</Link>
-              {!session && <a className="marketing-demo-link" href="#try-demo">Try the demo</a>}
+              <a className="marketing-demo-link" href="#try-demo">Try the demo</a>
             </div>
             <div className="marketing-trust"><ShieldCheck size={17} aria-hidden="true" /> Box contents stay private to your household.</div>
           </div>
-          {session ? <InventoryPreview /> : <HomeInventoryDemo />}
+          <HomeInventoryDemo />
         </section>
 
         <section className="marketing-how" aria-labelledby="how-title">
@@ -62,7 +61,7 @@ export function HomePage() {
           <div className="marketing-pricing-title">
             <h2 id="pricing-title">Plans for your household</h2>
             <p>Start with Free. Upgrade as your inventory grows.</p>
-            {!session && <a className="marketing-demo-link" href="#try-demo">Try the demo</a>}
+            <a className="marketing-demo-link" href="#try-demo">Try the demo</a>
           </div>
           <div className="marketing-plans">
             {Object.entries(plans).map(([id, plan]) => (

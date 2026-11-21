@@ -86,6 +86,14 @@ test('opens the dark homepage demo from pricing and follows its same-device link
   await expect(page.getByRole('heading', { name: 'Small fixes & tools' })).toBeVisible()
 })
 
+test('a direct homepage demo link scrolls to the search on a short screen', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 480 })
+  await page.goto('/#try-demo')
+  const demo = page.getByRole('region', { name: 'Sample inventory' })
+  await expect(demo.getByRole('searchbox')).toBeInViewport()
+  await expect(demo).toBeFocused()
+})
+
 test('lets signed-out visitors reach the full demo and open a shareable sample box', async ({ page }) => {
   await page.goto('/')
   await page.getByRole('link', { name: 'Open full demo' }).click()

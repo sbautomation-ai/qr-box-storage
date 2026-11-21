@@ -41,6 +41,14 @@ test('signs up separate households, shares a box by invite, and deletes a member
   await page.goto('/signup')
   await signUp(page, request, `owner-${id}@example.com`)
   await createHousehold(page, 'Our Home')
+
+  await page.goto('/#try-demo')
+  await expect(page.getByRole('link', { name: 'Open inventory', exact: true }).first()).toBeVisible()
+  const sampleInventory = page.getByRole('region', { name: 'Sample inventory' })
+  await sampleInventory.getByRole('searchbox').fill('headlamp')
+  await expect(sampleInventory.getByRole('button', { name: /Camping kit/ })).toBeVisible()
+  await page.goto('/boxes')
+
   await page.getByRole('button', { name: 'New box', exact: true }).first().click()
   const create = page.getByRole('dialog', { name: 'Create a box' })
   await create.getByLabel('Name', { exact: true }).fill('Garage tools')
