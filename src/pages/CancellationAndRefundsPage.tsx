@@ -2,7 +2,8 @@ import { Link } from 'react-router-dom'
 import { BrandLink } from '@/components/BrandLink'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { billingSupportEmail, withdrawalEnabled } from '@/lib/plans'
+import { withdrawalEnabled } from '@/lib/plans'
+import { supportEmail } from '@/lib/support'
 
 export function CancellationAndRefundsPage() {
   return (
@@ -30,7 +31,7 @@ export function CancellationAndRefundsPage() {
               <h2 className="mb-2 text-xl font-semibold text-foreground">14-day right of withdrawal</h2>
               <p>If you are a consumer with a statutory right of withdrawal, you generally have 14 days from the day you first subscribe to withdraw without giving a reason.</p>
               {withdrawalEnabled && <p className="mt-3"><Link className="font-semibold text-primary underline underline-offset-4" to="/account/withdraw">Withdraw from your contract</Link>. Submit the online form before the deadline and we’ll email you an acknowledgement with the statement, date and time.</p>}
-              <p className="mt-3">You can also <a className="underline underline-offset-4 hover:text-primary" href={`mailto:${billingSupportEmail}`}>email billing support</a> before the deadline. Say that you are withdrawing from your QR Box Storage Family contract and include your name, the email used to subscribe, and the receipt number or purchase date.</p>
+              <p className="mt-3">You can also <a className="underline underline-offset-4 hover:text-primary" href={`mailto:${supportEmail}`}>email billing support</a> before the deadline. Say that you are withdrawing from your QR Box Storage Family contract and include your name, the email used to subscribe, and the receipt number or purchase date.</p>
               <p className="mt-3">If you exercise your right to withdraw, we’ll end your Family subscription and issue a full refund to your original payment method within 14 days of receiving your request.</p>
             </section>
             <section>
@@ -39,7 +40,7 @@ export function CancellationAndRefundsPage() {
             </section>
             <section>
               <h2 className="mb-2 text-xl font-semibold text-foreground">Billing support</h2>
-              <p>Email <a className="break-words underline underline-offset-4 hover:text-primary" href={`mailto:${billingSupportEmail}`}>{billingSupportEmail}</a> for billing questions, cancellation help, or refund requests.</p>
+              <p>Email <a className="break-words underline underline-offset-4 hover:text-primary" href={`mailto:${supportEmail}`}>{supportEmail}</a> for billing questions, cancellation help, or refund requests.</p>
             </section>
           </CardContent>
         </Card>

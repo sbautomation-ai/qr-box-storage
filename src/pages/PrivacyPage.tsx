@@ -2,6 +2,7 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 import { ArrowLeft, ShieldCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { supportEmail } from '@/lib/support'
 
 export function PrivacyPage() {
   return (
@@ -17,7 +18,7 @@ export function PrivacyPage() {
           <CardHeader>
             <div className="mb-4 grid h-12 w-12 place-items-center rounded-xl bg-secondary text-primary"><ShieldCheck className="h-6 w-6" /></div>
             <h1 className="page-title">Privacy policy</h1>
-            <p className="mt-2 text-sm text-muted-foreground">Last updated 19 November 2026</p>
+            <p className="mt-2 text-sm text-muted-foreground">Last updated 21 November 2026</p>
           </CardHeader>
           <CardContent className="space-y-7 leading-relaxed text-muted-foreground">
             <section>
@@ -35,7 +36,7 @@ export function PrivacyPage() {
             </section>
             <section>
               <h2 className="mb-2 text-xl font-semibold text-foreground">Retention and deletion</h2>
-              <p>Shared inventory and movement history stay with your household when you leave. Deleting your account removes your sign-in and member profile. If you are the only household member, deletion also removes the household inventory and schedules its photo files for removal. Use the <Link className="underline underline-offset-4 hover:text-primary" to="/account/delete">account deletion page</Link> or email <a className="underline underline-offset-4 hover:text-primary" href="mailto:sciclunaluke.93@gmail.com">sciclunaluke.93@gmail.com</a> for help.</p>
+              <p>Shared inventory and movement history stay with your household when you leave. Deleting your account removes your sign-in and member profile. If you are the only household member, deletion also removes the household inventory and schedules its photo files for removal. Use the <Link className="underline underline-offset-4 hover:text-primary" to="/account/delete">account deletion page</Link> or email <a className="break-words underline underline-offset-4 hover:text-primary" href={`mailto:${supportEmail}`}>{supportEmail}</a> for help.</p>
             </section>
             <section>
               <h2 className="mb-2 text-xl font-semibold text-foreground">Google account data</h2>
