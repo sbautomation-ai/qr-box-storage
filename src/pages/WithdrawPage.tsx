@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { authLink } from '@/lib/auth'
-import { billingSupportEmail, withdrawalEnabled } from '@/lib/plans'
+import { withdrawalEnabled } from '@/lib/plans'
+import { supportEmail } from '@/lib/support'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/providers/AuthProvider'
 
@@ -112,7 +113,7 @@ export function WithdrawPage() {
               : email ? <WithdrawalForm key={user?.id} email={email} />
                 : loading ? <p role="status">Checking sign-in…</p>
                   : <p><Link className="font-semibold text-primary underline underline-offset-4" to={authLink('login', '/account/withdraw')}>Sign in</Link> to submit your withdrawal and receive an acknowledgement at your verified email.</p>}
-            <p className="text-sm">You can also <a className="underline underline-offset-4 hover:text-primary" href={`mailto:${billingSupportEmail}`}>email billing support</a> to withdraw. See <Link className="underline underline-offset-4 hover:text-primary" to="/cancellation-and-refunds">cancellation and refunds</Link> for details.</p>
+            <p className="text-sm">You can also <a className="underline underline-offset-4 hover:text-primary" href={`mailto:${supportEmail}`}>email billing support</a> to withdraw. See <Link className="underline underline-offset-4 hover:text-primary" to="/cancellation-and-refunds">cancellation and refunds</Link> for details.</p>
           </CardContent>
         </Card>
       </article>
