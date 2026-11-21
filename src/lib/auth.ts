@@ -5,7 +5,7 @@ export function safeReturnTo(value: string | null) {
   if (url.origin !== 'https://app.invalid') return fallback
   if (/^\/boxes(?:\/[\w-]+)?$/.test(url.pathname)
     || /^\/join\/[\w-]+$/.test(url.pathname)
-    || ['/settings', '/setup-required', '/account/delete'].includes(url.pathname)) {
+    || ['/settings', '/setup-required', '/account/delete', '/account/withdraw'].includes(url.pathname)) {
     return url.pathname + url.search
   }
   return fallback

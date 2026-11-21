@@ -53,5 +53,8 @@ verify_jwt = false
 [functions.stripe-webhook]
 verify_jwt = false
 
+[functions.billing-withdrawal]
+verify_jwt = false
+
 [functions.photo-cleanup]
 verify_jwt = false
