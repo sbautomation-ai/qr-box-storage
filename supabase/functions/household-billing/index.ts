@@ -1,5 +1,6 @@
 import { json, serviceClient } from '../_shared/service.ts'
 import { ongoingStatuses, stripeClient, stripePriceId } from '../_shared/stripe.ts'
+import { withdrawalEmailSettings } from '../_shared/withdrawal.ts'
 
 Deno.serve(async (request) => {
   const origin = request.headers.get('Origin')
@@ -59,6 +60,9 @@ Deno.serve(async (request) => {
         price.recurring?.interval !== 'year' || price.recurring.interval_count !== 1) {
       throw new Error('Family price must be active at 29 EUR per year')
     }
+    if (price.livemode && !withdrawalEmailSettings()) {
+      return reply({ error: 'Family subscriptions are not open yet' }, 503)
+    }
 
     const customer = billing ? billing.stripe_customer_id : (await stripe.customers.create(
       { metadata: { household_id: householdId } },
@@ -76,6 +80,9 @@ Deno.serve(async (request) => {
       line_items: [{ price: price.id, quantity: 1 }],
       metadata: { household_id: householdId, checkout_key: reservation.checkout_key },
       subscription_data: { metadata: { household_id: householdId } },
+      custom_text: {
+        submit: { message: `Family renews annually. See [cancellation and refunds](${appUrl}/cancellation-and-refunds), including how to exercise your right of withdrawal.` },
+      },
       expires_at: expiresAt,
       success_url: `${appUrl}/settings?billing=success`,
       cancel_url: `${appUrl}/settings?billing=cancelled`,

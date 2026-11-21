@@ -31,6 +31,7 @@ export function PrivacyPage() {
             <section>
               <h2 className="mb-2 text-xl font-semibold text-foreground">Storage and sharing</h2>
               <p>Application data is stored in Supabase and the web application is hosted by Vercel. We use those providers to run the service. When you subscribe to Family, Stripe processes your payment and we receive the customer and subscription identifiers and billing status needed to manage access. Household data is accessible only to authenticated members of that household, subject to database row-level security.</p>
+              <p className="mt-3">If you submit a subscription withdrawal through the app, we record your name, verified email address, purchase reference and submission time to process the request and keep a record of it. Resend delivers the acknowledgement to you and a copy to billing support.</p>
             </section>
             <section>
               <h2 className="mb-2 text-xl font-semibold text-foreground">Retention and deletion</h2>

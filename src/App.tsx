@@ -12,6 +12,7 @@ import { LoginPage } from '@/pages/LoginPage'
 import { PrivacyPage } from '@/pages/PrivacyPage'
 import { SettingsPage } from '@/pages/SettingsPage'
 import { SetupRequiredPage } from '@/pages/SetupRequiredPage'
+import { WithdrawPage } from '@/pages/WithdrawPage'
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
       <Route path="/login" element={<LoginPage key="login" />} />
       <Route path="/signup" element={<LoginPage key="signup" mode="signup" />} />
       <Route path="/account/delete" element={<DeleteAccountPage />} />
+      <Route path="/account/withdraw" element={<WithdrawPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/cancellation-and-refunds" element={<CancellationAndRefundsPage />} />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />

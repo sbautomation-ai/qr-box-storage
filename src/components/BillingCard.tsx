@@ -2,7 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { billingEnabled, plans } from '@/lib/plans'
+import { billingEnabled, plans, withdrawalEnabled } from '@/lib/plans'
 import { errorMessage, supabase } from '@/lib/supabase'
 
 async function billingRequest<T>(action: 'status' | 'checkout' | 'portal') {
@@ -60,7 +60,10 @@ export function BillingCard({ householdId, isOwner }: { householdId: string; isO
           </>
         )}
         {checkout.error && <p className="text-sm text-danger" role="alert">{errorMessage(checkout.error)}</p>}
-        <p className="text-sm text-muted-foreground"><Link className="underline underline-offset-4 hover:text-primary" to="/cancellation-and-refunds">Cancellation and refunds</Link></p>
+        <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+          <Link className="underline underline-offset-4 hover:text-primary" to="/cancellation-and-refunds">Cancellation and refunds</Link>
+          {withdrawalEnabled && isOwner && canManage && <Link className="underline underline-offset-4 hover:text-primary" to="/account/withdraw">Withdraw from your contract</Link>}
+        </div>
       </CardContent>
     </Card>
   )
