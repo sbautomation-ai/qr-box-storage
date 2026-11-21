@@ -5,6 +5,7 @@ import { AuthCallbackPage } from '@/pages/AuthCallbackPage'
 import { BoxPage } from '@/pages/BoxPage'
 import { CancellationAndRefundsPage } from '@/pages/CancellationAndRefundsPage'
 import { DeleteAccountPage } from '@/pages/DeleteAccountPage'
+import { DemoPage } from '@/pages/DemoPage'
 import { HomePage } from '@/pages/HomePage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { JoinPage } from '@/pages/JoinPage'
@@ -18,6 +19,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
+      <Route path="/demo/:slug?" element={<DemoPage />} />
       <Route path="/login" element={<LoginPage key="login" />} />
       <Route path="/signup" element={<LoginPage key="signup" mode="signup" />} />
       <Route path="/account/delete" element={<DeleteAccountPage />} />

@@ -18,6 +18,8 @@
 .marketing-hero h1 { max-width: 34rem; font-size: clamp(3.1rem, 6.6vw, 6.1rem); line-height: 0.98; }
 .marketing-hero h1 em { color: var(--primary-text); }
 .marketing-hero p { max-width: 29rem; margin-block: 1.55rem 1.6rem; font-size: clamp(1.05rem, 2vw, 1.24rem); line-height: 1.55; color: var(--muted-foreground); }
+.marketing-hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.65rem 1.25rem; }
+.marketing-demo-link { display: inline-flex; align-items: center; min-height: 2.75rem; font-weight: 650; text-decoration: underline; text-underline-offset: 4px; color: var(--primary-text); }
 .marketing-trust { display: flex; align-items: center; gap: 0.45rem; margin-top: 1rem; font-size: 0.91rem; color: var(--muted-foreground); }
 .marketing-trust svg { flex: none; color: var(--primary); }
 .marketing h2 { font-size: clamp(2.05rem, 4.4vw, 3.35rem); line-height: 1.05; }

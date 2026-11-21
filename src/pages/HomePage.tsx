@@ -34,7 +34,10 @@ export function HomePage() {
           <div>
             <h1>Know what’s in <em>every box.</em></h1>
             <p>Label your storage boxes, keep track of what’s inside, and find what you need without opening every lid.</p>
-            <Link className="marketing-button marketing-primary" to={start}>{session ? 'Open inventory' : 'Get started free'}</Link>
+            <div className="marketing-hero-actions">
+              <Link className="marketing-button marketing-primary" to={start}>{session ? 'Open inventory' : 'Get started free'}</Link>
+              {!session && <Link className="marketing-demo-link" to="/demo">Try the demo</Link>}
+            </div>
             <div className="marketing-trust"><ShieldCheck size={17} aria-hidden="true" /> Box contents stay private to your household.</div>
           </div>
           <InventoryPreview />
