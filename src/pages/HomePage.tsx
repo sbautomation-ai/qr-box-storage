@@ -2,6 +2,7 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 import { Box, Check, Printer, Search, ShieldCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { BrandLink } from '@/components/BrandLink'
+import { HomeInventoryDemo } from '@/components/HomeInventoryDemo'
 import { InventoryPreview } from '@/components/InventoryPreview'
 import { billingEnabled, plans } from '@/lib/plans'
 import { useAuth } from '@/providers/AuthProvider'
@@ -31,16 +32,16 @@ export function HomePage() {
       </header>
       <main>
         <section className="page-width marketing-hero">
-          <div>
+          <div className="marketing-hero-copy">
             <h1>Know what’s in <em>every box.</em></h1>
             <p>Label your storage boxes, keep track of what’s inside, and find what you need without opening every lid.</p>
             <div className="marketing-hero-actions">
               <Link className="marketing-button marketing-primary" to={start}>{session ? 'Open inventory' : 'Get started free'}</Link>
-              {!session && <Link className="marketing-demo-link" to="/demo">Try the demo</Link>}
+              {!session && <a className="marketing-demo-link" href="#try-demo">Try the demo</a>}
             </div>
             <div className="marketing-trust"><ShieldCheck size={17} aria-hidden="true" /> Box contents stay private to your household.</div>
           </div>
-          <InventoryPreview />
+          {session ? <InventoryPreview /> : <HomeInventoryDemo />}
         </section>
 
         <section className="marketing-how" aria-labelledby="how-title">
@@ -58,7 +59,11 @@ export function HomePage() {
         </section>
 
         <section id="pricing" className="page-width marketing-pricing" aria-labelledby="pricing-title">
-          <div className="marketing-pricing-title"><h2 id="pricing-title">Plans for your household</h2><p>Start with Free. Upgrade as your inventory grows.</p></div>
+          <div className="marketing-pricing-title">
+            <h2 id="pricing-title">Plans for your household</h2>
+            <p>Start with Free. Upgrade as your inventory grows.</p>
+            {!session && <a className="marketing-demo-link" href="#try-demo">Try the demo</a>}
+          </div>
           <div className="marketing-plans">
             {Object.entries(plans).map(([id, plan]) => (
               <article className={id === 'family' ? 'marketing-plan marketing-family' : 'marketing-plan'} key={id}>
